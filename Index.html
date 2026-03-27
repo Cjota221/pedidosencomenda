@@ -22,14 +22,40 @@
             to { transform: translateY(0) translateX(-50%); opacity: 1; }
         }
         .toast-animate { animation: slideIn 0.3s ease-out forwards; }
+
+        /* Ajustes para Impressão e PDF */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; padding: 0 !important; }
+            .print-container { width: 100% !important; margin: 0 !important; box-shadow: none !important; border: none !important; }
+        }
+
+        /* Overlay de Carregamento para o PDF */
+        #pdf-loader {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
 
+    <!-- Loader de PDF -->
+    <div id="pdf-loader">
+        <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <p class="mt-4 font-bold text-indigo-600 animate-pulse uppercase tracking-widest text-xs">A gerar ficheiro PDF...</p>
+    </div>
+
     <!-- Interface Principal -->
     <div id="app-container">
-        <!-- Dashboard Superior -->
-        <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <!-- Dashboard Superior (Fixo no UI, Oculto no PDF) -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm no-print">
             <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
                 <div class="flex items-center gap-3">
                     <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100">
@@ -43,7 +69,7 @@
                         <h1 class="text-lg font-black tracking-tighter">OrderSystem <span class="text-indigo-600">PRO</span></h1>
                         <div class="flex items-center gap-1.5">
                             <div id="sync-indicator" class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                            <span id="sync-text" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Nuvem Ativa</span>
+                            <span id="sync-text" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Sincronizado</span>
                         </div>
                     </div>
                 </div>
@@ -61,16 +87,16 @@
         </header>
 
         <!-- Conteúdo Principal -->
-        <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <main id="main-content" class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 print-container">
             <!-- Sidebar (Dados da Cliente e Finanças) -->
             <aside class="lg:col-span-4 space-y-6">
                 <section class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
                     <div class="flex items-center gap-2 mb-2">
                         <svg class="w-4 h-4 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M18 7a4 4 0 0 0-3-3.87"/></svg>
-                        <h2 class="font-bold text-sm uppercase">Dados da Cliente</h2>
+                        <h2 class="font-bold text-sm uppercase text-indigo-600">Dados da Cliente</h2>
                     </div>
                     
-                    <div class="flex items-center gap-4 py-2 border-b border-slate-50 mb-2">
+                    <div class="flex items-center gap-4 py-2 border-b border-slate-50 mb-2 no-print">
                         <div id="logo-container" class="w-16 h-16 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center relative overflow-hidden group">
                             <span id="logo-placeholder" class="text-slate-300">
                                 <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
@@ -78,7 +104,7 @@
                             <img id="logo-img" class="hidden w-full h-full object-contain" />
                             <input type="file" id="input-logo" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
                         </div>
-                        <p class="text-[10px] text-slate-400 leading-tight">Carregue a logomarca para personalizar os documentos.</p>
+                        <p class="text-[10px] text-slate-400 leading-tight">A logomarca aparecerá no cabeçalho do PDF.</p>
                     </div>
 
                     <div class="space-y-3">
@@ -101,7 +127,7 @@
                                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">CEP</label>
                                 <input type="text" id="cliente-cep" class="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" placeholder="00000-000" />
                             </div>
-                            <button id="btn-buscar-cep" class="p-2.5 bg-slate-100 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                            <button id="btn-buscar-cep" class="p-2.5 bg-slate-100 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors no-print">
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                             </button>
                         </div>
@@ -116,20 +142,24 @@
                 <section class="bg-slate-900 p-6 rounded-3xl text-white shadow-xl space-y-4">
                     <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
                         <svg class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
-                        <h2 class="font-bold">Finanças</h2>
+                        <h2 class="font-bold">Finanças e Entrega</h2>
                     </div>
                     <div class="space-y-3">
                         <div class="flex justify-between text-xs text-slate-400"><span>Produtos</span><span id="valor-mercadoria">R$ 0,00</span></div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] font-bold text-indigo-400 uppercase">Frete (+)</label>
+                            <label class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Frete (+)</label>
                             <input type="number" id="input-frete" value="0" class="bg-slate-800 border-none rounded-xl p-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500" />
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] font-bold text-rose-400 uppercase">Desconto (-)</label>
+                            <label class="text-[9px] font-bold text-rose-400 uppercase tracking-widest">Desconto (-)</label>
                             <input type="number" id="input-desconto" value="0" class="bg-slate-800 border-none rounded-xl p-2 text-sm outline-none focus:ring-1 focus:ring-rose-500" />
                         </div>
+                        <div class="pt-2">
+                            <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Previsão de Entrega (15-20 dias úteis)</label>
+                            <p id="display-prazo" class="text-xs font-bold text-indigo-300 mt-1">Calculando...</p>
+                        </div>
                         <div class="pt-4 border-t border-slate-800 flex justify-between items-center">
-                            <span class="font-bold text-sm">TOTAL</span>
+                            <span class="font-bold text-sm tracking-wider uppercase">Valor Total</span>
                             <span id="valor-final" class="text-2xl font-black text-indigo-400">R$ 0,00</span>
                         </div>
                     </div>
@@ -138,10 +168,10 @@
 
             <!-- Lista de Modelos -->
             <div class="lg:col-span-8 space-y-6">
-                <div class="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200">
+                <div class="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200 no-print">
                     <div>
                         <h2 class="text-xl font-black">Produtos do Pedido</h2>
-                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Controle de Produção</p>
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Itens da Encomenda</p>
                     </div>
                     <div class="flex gap-2">
                         <button id="btn-add-modelo" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95 text-sm">
@@ -149,33 +179,33 @@
                         </button>
                         <label class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-5 py-3 rounded-2xl font-bold transition-all cursor-pointer text-sm">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg> Lote
-                            <input type="file" id="input-lote" multiple className="hidden" accept="image/*" style="display:none" />
+                            <input type="file" id="input-lote" multiple style="display:none" accept="image/*" />
                         </label>
                     </div>
                 </div>
 
                 <div id="modelos-lista" class="space-y-4">
-                    <!-- Modelos serão inseridos aqui via JS -->
+                    <!-- Modelos inseridos via JS -->
                 </div>
             </div>
         </main>
 
         <!-- Menu Flutuante -->
-        <div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-xl border border-slate-200 px-6 py-4 rounded-[2rem] shadow-2xl flex items-center gap-6 z-[100]">
+        <div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-xl border border-slate-200 px-6 py-4 rounded-[2rem] shadow-2xl flex items-center gap-6 z-[100] no-print">
             <div class="hidden md:block border-r border-slate-200 pr-6">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Documentos</p>
-                <p class="text-[8px] text-slate-300 font-bold mt-1">SISTEMA PRO v2.5</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Gerar Documento</p>
+                <p class="text-[8px] text-slate-300 font-bold mt-1 tracking-widest uppercase">Exportação Direta</p>
             </div>
             <div class="flex gap-3">
-                <button onclick="window.print()" class="flex items-center gap-2 bg-slate-800 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-black transition-all">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> PDF Cliente
+                <button onclick="window.gerarPDF('cliente')" class="flex items-center gap-2 bg-slate-800 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-black transition-all">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Download PDF
                 </button>
-                <button onclick="window.print()" class="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+                <button onclick="window.gerarPDF('producao')" class="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M16.5 9.4 7.55 4.24M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
                         <path d="M3.29 7l8.71 5 8.71-5"/>
                         <line x1="12" y1="22" x2="12" y2="12"/>
-                    </svg> PDF Produção
+                    </svg> Ficha de Produção
                 </button>
             </div>
         </div>
@@ -184,46 +214,52 @@
     <!-- Toast Container -->
     <div id="toast-container" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[110]"></div>
 
-    <!-- Inicialização Global do Estado -->
+    <!-- Scripts da App -->
     <script>
-        // Inicializamos o estado imediatamente para evitar erros de undefined
         window.appState = {
             cliente: { nome: '', telefone: '', cnpj: '', cep: '', endereco: '', bairro: '', cidade: '', estado: '', logo: '' },
             modelos: [],
-            config: { desconto: 0, frete: 0, gradePadrao: { '34': 0, '35': 0, '36': 0, '37': 0, '38': 0, '39': 0, '40': 0 } }
+            config: { desconto: 0, frete: 0, gradePadrao: { '34': 0, '35': 0, '36': 0, '37': 0, '38': 0, '39': 0, '40': 0 } },
+            prazoEntrega: ''
         };
+
+        function calcularPrazoEntrega() {
+            const dataAtual = new Date();
+            function addDiasUteis(data, dias) {
+                let d = new Date(data.getTime());
+                let count = 0;
+                while (count < dias) {
+                    d.setDate(d.getDate() + 1);
+                    if (d.getDay() !== 0 && d.getDay() !== 6) count++;
+                }
+                return d;
+            }
+            const dataMin = addDiasUteis(dataAtual, 15);
+            const dataMax = addDiasUteis(dataAtual, 20);
+            const format = (d) => d.toLocaleDateString('pt-BR');
+            const str = `Entre ${format(dataMin)} e ${format(dataMax)}`;
+            window.appState.prazoEntrega = str;
+            const el = document.getElementById('display-prazo');
+            if (el) el.innerText = str;
+        }
+        calcularPrazoEntrega();
     </script>
 
-    <!-- Scripts do Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Variáveis Globais para os outros scripts
-        window.FirebaseOps = { setDoc, doc, onSnapshot };
-
-        // --- Inicialização com Verificação ---
-        let firebaseApp;
-        let db;
-        let auth;
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'order-system-pro';
-
-        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-            try {
-                const firebaseConfig = JSON.parse(__firebase_config);
-                firebaseApp = initializeApp(firebaseConfig);
-                auth = getAuth(firebaseApp);
-                db = getFirestore(firebaseApp);
-            } catch(e) { console.error("Erro ao configurar Firebase:", e); }
-        }
 
         let user = null;
         let isFirstLoad = true;
 
-        // --- Autenticação ---
         const initAuth = async () => {
-            if (!auth) return;
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await signInWithCustomToken(auth, __initial_auth_token);
             } else {
@@ -231,62 +267,36 @@
             }
         };
 
-        if (auth) {
-            onAuthStateChanged(auth, (u) => {
-                user = u;
-                if (user && db) {
-                    // Sincronização em tempo real
-                    onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'currentOrder', 'main'), (docSnap) => {
-                        if (docSnap.exists()) {
-                            const data = docSnap.data();
-                            window.appState.cliente = data.cliente || window.appState.cliente;
-                            window.appState.modelos = data.modelos || [];
-                            window.appState.config = data.config || window.appState.config;
-                            
-                            if (isFirstLoad) {
-                                if (window.updateUIFromState) window.updateUIFromState();
-                                isFirstLoad = false;
-                            } else {
-                                if (window.renderModelos) window.renderModelos();
-                                if (window.calculateTotals) window.calculateTotals();
-                            }
-                        }
-                    }, (err) => console.error("Erro no Firestore:", err));
-                }
-            });
-            initAuth();
-        }
+        onAuthStateChanged(auth, (u) => {
+            user = u;
+            if (user) {
+                onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'currentOrder', 'main'), (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        window.appState.cliente = data.cliente || window.appState.cliente;
+                        window.appState.modelos = data.modelos || [];
+                        window.appState.config = data.config || window.appState.config;
+                        if (isFirstLoad) { window.updateUIFromState(); isFirstLoad = false; }
+                        else { window.renderModelos(); window.calculateTotals(); }
+                    }
+                });
+            }
+        });
+        initAuth();
 
-        // Função Global para salvar no Firebase
         window.saveToCloud = async () => {
             if (!user || !db) return;
-            const indicator = document.getElementById('sync-indicator');
-            const text = document.getElementById('sync-text');
-            if (indicator) indicator.classList.replace('bg-green-500', 'bg-amber-400');
-            if (text) text.innerText = 'A Guardar...';
-            
+            document.getElementById('sync-indicator').classList.replace('bg-green-500', 'bg-amber-400');
             try {
                 await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'currentOrder', 'main'), {
-                    cliente: window.appState.cliente,
-                    modelos: window.appState.modelos,
-                    config: window.appState.config,
-                    lastUpdated: new Date().toISOString()
+                    cliente: window.appState.cliente, modelos: window.appState.modelos, config: window.appState.config, lastUpdated: new Date().toISOString()
                 });
-                
-                setTimeout(() => {
-                    if (indicator) indicator.classList.replace('bg-amber-400', 'bg-green-500');
-                    if (text) text.innerText = 'Nuvem Ativa';
-                }, 500);
-            } catch (e) {
-                console.error(e);
-                if (window.showToast) window.showToast("Erro ao sincronizar", "error");
-            }
+                setTimeout(() => document.getElementById('sync-indicator').classList.replace('bg-amber-400', 'bg-green-500'), 500);
+            } catch (e) { console.error(e); }
         };
     </script>
 
-    <!-- Lógica de Interface (Vanilla JS) -->
     <script>
-        // --- Seletores ---
         const elModelosLista = document.getElementById('modelos-lista');
         const elClienteNome = document.getElementById('cliente-nome');
         const elClienteTelefone = document.getElementById('cliente-telefone');
@@ -300,10 +310,8 @@
         const elInputFrete = document.getElementById('input-frete');
         const elInputDesconto = document.getElementById('input-desconto');
 
-        // --- Funções de Ajuda ---
         window.showToast = function(msg, type = "success") {
             const container = document.getElementById('toast-container');
-            if (!container) return;
             const toast = document.createElement('div');
             toast.className = `px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 toast-animate mb-4 ${type === 'success' ? 'bg-indigo-600' : 'bg-rose-600'} text-white`;
             toast.innerHTML = `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg><span class="font-bold text-sm tracking-tight">${msg}</span>`;
@@ -313,87 +321,59 @@
 
         window.updateUIFromState = function() {
             const { cliente, config } = window.appState;
-            if (!cliente || !config) return;
-            
-            if (elClienteNome) elClienteNome.value = cliente.nome || '';
-            if (elClienteTelefone) elClienteTelefone.value = cliente.telefone || '';
-            if (elClienteCnpj) elClienteCnpj.value = cliente.cnpj || '';
-            if (elClienteCep) elClienteCep.value = cliente.cep || '';
-            if (elClienteEnd) elClienteEnd.value = cliente.endereco || '';
-            if (elClienteCid) elClienteCid.value = cliente.cidade || '';
-            if (elClienteEst) elClienteEst.value = cliente.estado || '';
-            
-            if (cliente.logo && elLogoImg) {
-                elLogoImg.src = cliente.logo;
-                elLogoImg.classList.remove('hidden');
-                if (elLogoPlaceholder) elLogoPlaceholder.classList.add('hidden');
-            }
-
-            if (elInputFrete) elInputFrete.value = config.frete || 0;
-            if (elInputDesconto) elInputDesconto.value = config.desconto || 0;
-
+            elClienteNome.value = cliente.nome || '';
+            elClienteTelefone.value = cliente.telefone || '';
+            elClienteCnpj.value = cliente.cnpj || '';
+            elClienteCep.value = cliente.cep || '';
+            elClienteEnd.value = cliente.endereco || '';
+            elClienteCid.value = cliente.cidade || '';
+            elClienteEst.value = cliente.estado || '';
+            if (cliente.logo) { elLogoImg.src = cliente.logo; elLogoImg.classList.remove('hidden'); elLogoPlaceholder.classList.add('hidden'); }
+            elInputFrete.value = config.frete || 0;
+            elInputDesconto.value = config.desconto || 0;
             window.renderModelos();
             window.calculateTotals();
         };
 
         window.calculateTotals = function() {
             const { modelos } = window.appState;
-            let totalParesGlobal = 0;
-            let subtotalProdutos = 0;
-
+            let totalParesGlobal = 0; let subtotalProdutos = 0;
             modelos.forEach(m => {
                 const paresCor = Object.values(m.grade).reduce((a, b) => a + (parseInt(b) || 0), 0);
                 const nCores = m.cores.split(',').filter(c => c.trim()).length || 1;
                 const totalModelo = paresCor * nCores;
-                
                 totalParesGlobal += totalModelo;
                 subtotalProdutos += totalModelo * (parseFloat(m.valorUnitario) || 0);
             });
-
-            const frete = parseFloat(elInputFrete ? elInputFrete.value : 0) || 0;
-            const desconto = parseFloat(elInputDesconto ? elInputDesconto.value : 0) || 0;
+            const frete = parseFloat(elInputFrete.value) || 0;
+            const desconto = parseFloat(elInputDesconto.value) || 0;
             const final = subtotalProdutos + frete - desconto;
-
-            const elTotalPares = document.getElementById('total-pares-header');
-            const elSubtotal = document.getElementById('subtotal-header');
-            const elValMerc = document.getElementById('valor-mercadoria');
-            const elValFin = document.getElementById('valor-final');
-
-            if (elTotalPares) elTotalPares.innerText = totalParesGlobal;
-            if (elSubtotal) elSubtotal.innerText = `R$ ${final.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-            if (elValMerc) elValMerc.innerText = `R$ ${subtotalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-            if (elValFin) elValFin.innerText = `R$ ${final.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('total-pares-header').innerText = totalParesGlobal;
+            document.getElementById('subtotal-header').innerText = `R$ ${final.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('valor-mercadoria').innerText = `R$ ${subtotalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('valor-final').innerText = `R$ ${final.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
         };
 
         window.renderModelos = function() {
             const { modelos } = window.appState;
-            if (!elModelosLista) return;
             elModelosLista.innerHTML = '';
-
             if (modelos.length === 0) {
-                elModelosLista.innerHTML = `
-                    <div class="bg-slate-100/50 border-2 border-dashed border-slate-200 rounded-[2.5rem] py-20 flex flex-col items-center gap-3">
-                        <svg class="w-12 h-12 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg>
-                        <p class="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]">Sem modelos no pedido</p>
-                    </div>
-                `;
+                elModelosLista.innerHTML = `<div class="bg-slate-100/50 border-2 border-dashed border-slate-200 rounded-[2.5rem] py-20 flex flex-col items-center gap-3"><svg class="w-12 h-12 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg><p class="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]">Sem modelos no pedido</p></div>`;
                 return;
             }
-
             modelos.forEach((m, idx) => {
                 const paresCor = Object.values(m.grade).reduce((a, b) => a + (parseInt(b) || 0), 0);
                 const nCores = m.cores.split(',').filter(c => c.trim()).length || 1;
                 const totalModelo = paresCor * nCores;
                 const subModelo = totalModelo * (parseFloat(m.valorUnitario) || 0);
-
                 const card = document.createElement('div');
-                card.className = "bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm group";
+                card.className = "bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm";
                 card.innerHTML = `
                     <div class="flex flex-col md:flex-row">
                         <div class="w-full md:w-48 h-48 relative bg-slate-100">
                             <img src="${m.foto}" class="w-full h-full object-cover" />
                             <div class="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded-lg uppercase">Item #${idx+1}</div>
-                            <input type="file" class="absolute inset-0 opacity-0 cursor-pointer" onchange="window.updateModeloFoto('${m.id}', this)" />
+                            <input type="file" class="absolute inset-0 opacity-0 cursor-pointer no-print" onchange="window.updateModeloFoto('${m.id}', this)" />
                         </div>
                         <div class="flex-1 p-6 space-y-4">
                             <div class="flex justify-between items-start gap-4">
@@ -410,25 +390,16 @@
                                 </div>
                             </div>
                             <div class="grid grid-cols-7 gap-2">
-                                ${Object.keys(m.grade).map(size => `
-                                    <div class="flex flex-col items-center">
-                                        <span class="text-[10px] font-bold text-slate-400 mb-1">${size}</span>
-                                        <input type="number" value="${m.grade[size]}" oninput="window.updateModeloGrade('${m.id}', '${size}', this.value)" class="w-full text-center py-2 bg-slate-50 rounded-xl border-none outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-sm" />
-                                    </div>
-                                `).join('')}
+                                ${Object.keys(m.grade).map(size => `<div class="flex flex-col items-center"><span class="text-[10px] font-bold text-slate-400 mb-1">${size}</span><input type="number" value="${m.grade[size]}" oninput="window.updateModeloGrade('${m.id}', '${size}', this.value)" class="w-full text-center py-2 bg-slate-50 rounded-xl border-none outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-sm" /></div>`).join('')}
                             </div>
-                            <div class="flex justify-between items-center pt-4 border-t border-slate-50">
+                            <div class="flex justify-between items-center pt-4 border-t border-slate-50 no-print">
                                 <div class="flex gap-4">
                                     <div class="bg-indigo-50 px-3 py-1 rounded-full text-[10px] font-bold text-indigo-600 uppercase tracking-widest">${totalModelo} pares</div>
                                     <div class="bg-emerald-50 px-3 py-1 rounded-full text-[10px] font-bold text-emerald-600 uppercase tracking-widest">R$ ${subModelo.toLocaleString('pt-BR')}</div>
                                 </div>
                                 <div class="flex gap-2">
-                                    <button onclick="window.cloneModelo('${m.id}')" class="p-2 hover:bg-slate-50 text-slate-300 hover:text-indigo-600 transition-all">
-                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                                    </button>
-                                    <button onclick="window.deleteModelo('${m.id}')" class="p-2 hover:bg-rose-50 text-slate-300 hover:text-rose-600 transition-all">
-                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg>
-                                    </button>
+                                    <button onclick="window.cloneModelo('${m.id}')" class="p-2 hover:bg-slate-50 text-slate-300 hover:text-indigo-600 transition-all"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+                                    <button onclick="window.deleteModelo('${m.id}')" class="p-2 hover:bg-rose-50 text-slate-300 hover:text-rose-600 transition-all"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg></button>
                                 </div>
                             </div>
                         </div>
@@ -438,176 +409,131 @@
             });
         };
 
-        // --- Sincronização e Eventos ---
-        let saveTimeout;
-        const triggerSave = () => {
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(() => { if (window.saveToCloud) window.saveToCloud(); }, 1000);
-        };
+        window.gerarPDF = async function(tipo) {
+            const loader = document.getElementById('pdf-loader');
+            loader.style.display = 'flex';
+            
+            const main = document.getElementById('main-content');
+            
+            try {
+                const canvas = await html2canvas(main, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: "#ffffff",
+                    onclone: (clonedDoc) => {
+                        // Remove elementos indesejados no clone que gera o PDF
+                        const elementsToRemove = clonedDoc.querySelectorAll('.no-print, button, input[type="file"]');
+                        elementsToRemove.forEach(el => el.style.display = 'none');
+                        
+                        // Garante que o container ocupe a largura total para a captura
+                        const printCont = clonedDoc.querySelector('.print-container');
+                        if (printCont) {
+                            printCont.style.width = '800px';
+                            printCont.style.padding = '20px';
+                        }
+                    }
+                });
 
-        const updateCliente = (field, val) => {
-            if (window.appState && window.appState.cliente) {
-                window.appState.cliente[field] = val;
-                window.calculateTotals();
-                triggerSave();
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                const nomeCliente = window.appState.cliente.nome || 'Cliente';
+                pdf.save(`Pedido_${nomeCliente.replace(/\s+/g, '_')}_${tipo}.pdf`);
+                
+                window.showToast("PDF descarregado com sucesso!");
+            } catch (err) {
+                console.error(err);
+                window.showToast("Erro ao gerar PDF", "error");
+            } finally {
+                loader.style.display = 'none';
             }
         };
 
-        if (elClienteNome) elClienteNome.oninput = (e) => updateCliente('nome', e.target.value);
-        if (elClienteTelefone) elClienteTelefone.oninput = (e) => updateCliente('telefone', e.target.value);
-        if (elClienteCnpj) elClienteCnpj.oninput = (e) => updateCliente('cnpj', e.target.value);
-        if (elClienteCep) elClienteCep.oninput = (e) => updateCliente('cep', e.target.value);
-        if (elClienteEnd) elClienteEnd.oninput = (e) => updateCliente('endereco', e.target.value);
-        if (elClienteCid) elClienteCid.oninput = (e) => updateCliente('cidade', e.target.value);
-        if (elClienteEst) elClienteEst.oninput = (e) => updateCliente('estado', e.target.value);
-        
-        if (elInputFrete) elInputFrete.oninput = (e) => { window.appState.config.frete = e.target.value; window.calculateTotals(); triggerSave(); };
-        if (elInputDesconto) elInputDesconto.oninput = (e) => { window.appState.config.desconto = e.target.value; window.calculateTotals(); triggerSave(); };
+        let saveTimeout;
+        const triggerSave = () => { clearTimeout(saveTimeout); saveTimeout = setTimeout(() => window.saveToCloud(), 1000); };
+        const updateCliente = (field, val) => { window.appState.cliente[field] = val; window.calculateTotals(); triggerSave(); };
 
-        // --- Funções dos Modelos ---
+        elClienteNome.oninput = (e) => updateCliente('nome', e.target.value);
+        elClienteTelefone.oninput = (e) => updateCliente('telefone', e.target.value);
+        elClienteCnpj.oninput = (e) => updateCliente('cnpj', e.target.value);
+        elClienteCep.oninput = (e) => updateCliente('cep', e.target.value);
+        elClienteEnd.oninput = (e) => updateCliente('endereco', e.target.value);
+        elClienteCid.oninput = (e) => updateCliente('cidade', e.target.value);
+        elClienteEst.oninput = (e) => updateCliente('estado', e.target.value);
+        elInputFrete.oninput = (e) => { window.appState.config.frete = e.target.value; window.calculateTotals(); triggerSave(); };
+        elInputDesconto.oninput = (e) => { window.appState.config.desconto = e.target.value; window.calculateTotals(); triggerSave(); };
+
         window.updateModeloData = (id, field, val) => {
             const index = window.appState.modelos.findIndex(m => m.id === id);
-            if (index > -1) {
-                window.appState.modelos[index][field] = val;
-                window.calculateTotals();
-                triggerSave();
-            }
+            if (index > -1) { window.appState.modelos[index][field] = val; window.calculateTotals(); triggerSave(); }
         };
-
         window.updateModeloGrade = (id, size, val) => {
             const index = window.appState.modelos.findIndex(m => m.id === id);
-            if (index > -1) {
-                window.appState.modelos[index].grade[size] = parseInt(val) || 0;
-                window.calculateTotals();
-                
-                // Atualização pontual do subtotal no card para evitar render completo
-                if (elModelosLista && elModelosLista.children[index]) {
-                    const cardTotals = elModelosLista.children[index].querySelector('.bg-indigo-50').parentNode;
-                    const pCor = Object.values(window.appState.modelos[index].grade).reduce((a, b) => a + (parseInt(b) || 0), 0);
-                    const nC = window.appState.modelos[index].cores.split(',').filter(c => c.trim()).length || 1;
-                    if (cardTotals && cardTotals.children[0]) cardTotals.children[0].innerText = `${pCor * nC} pares`;
-                    if (cardTotals && cardTotals.children[1]) cardTotals.children[1].innerText = `R$ ${(pCor * nC * window.appState.modelos[index].valorUnitario).toLocaleString('pt-BR')}`;
-                }
-                triggerSave();
-            }
+            if (index > -1) { window.appState.modelos[index].grade[size] = parseInt(val) || 0; window.calculateTotals(); triggerSave(); }
         };
-
         window.updateModeloFoto = (id, input) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const index = window.appState.modelos.findIndex(m => m.id === id);
-                if (index > -1) {
-                    window.appState.modelos[index].foto = e.target.result;
-                    window.renderModelos();
-                    triggerSave();
-                }
+                if (index > -1) { window.appState.modelos[index].foto = e.target.result; window.renderModelos(); triggerSave(); }
             };
             if(input.files[0]) reader.readAsDataURL(input.files[0]);
         };
-
-        window.deleteModelo = (id) => {
-            window.appState.modelos = window.appState.modelos.filter(m => m.id !== id);
-            window.renderModelos();
-            window.calculateTotals();
-            triggerSave();
-        };
-
+        window.deleteModelo = (id) => { window.appState.modelos = window.appState.modelos.filter(m => m.id !== id); window.renderModelos(); window.calculateTotals(); triggerSave(); };
         window.cloneModelo = (id) => {
             const target = window.appState.modelos.find(m => m.id === id);
             if (target) {
-                const clone = JSON.parse(JSON.stringify(target));
-                clone.id = Math.random().toString(36).substr(2, 9);
-                window.appState.modelos.push(clone);
-                window.renderModelos();
-                window.calculateTotals();
-                triggerSave();
+                const clone = JSON.parse(JSON.stringify(target)); clone.id = Math.random().toString(36).substr(2, 9);
+                window.appState.modelos.push(clone); window.renderModelos(); window.calculateTotals(); triggerSave();
             }
         };
 
-        const btnAdd = document.getElementById('btn-add-modelo');
-        if (btnAdd) {
-            btnAdd.onclick = () => {
-                if (!window.appState || !window.appState.config) return;
-                const newModel = { 
-                    id: Math.random().toString(36).substr(2, 9), 
-                    foto: 'https://placehold.co/300x300/e2e8f0/6366f1?text=Novo+Modelo', 
-                    cores: '', 
-                    valorUnitario: 0, 
-                    grade: { ...window.appState.config.gradePadrao } 
+        document.getElementById('btn-add-modelo').onclick = () => {
+            const newModel = { id: Math.random().toString(36).substr(2, 9), foto: 'https://placehold.co/300x300/e2e8f0/6366f1?text=Novo+Modelo', cores: '', valorUnitario: 0, grade: { ...window.appState.config.gradePadrao } };
+            window.appState.modelos.push(newModel); window.renderModelos(); window.calculateTotals(); triggerSave();
+        };
+
+        document.getElementById('btn-buscar-cep').onclick = async () => {
+            const cep = elClienteCep.value.replace(/\D/g, '');
+            if (cep.length !== 8) return;
+            try {
+                const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                const data = await res.json();
+                if (!data.erro) {
+                    elClienteEnd.value = data.logradouro; elClienteCid.value = data.localidade; elClienteEst.value = data.uf;
+                    updateCliente('endereco', data.logradouro); updateCliente('cidade', data.localidade); updateCliente('estado', data.uf);
+                }
+            } catch (e) { }
+        };
+
+        document.getElementById('input-logo').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                elLogoImg.src = ev.target.result; elLogoImg.classList.remove('hidden'); elLogoPlaceholder.classList.add('hidden');
+                updateCliente('logo', ev.target.result);
+            };
+            if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+        };
+
+        document.getElementById('input-lote').onchange = (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach((f, fIdx) => {
+                const r = new FileReader();
+                r.onload = ev => {
+                    const newModel = { id: Math.random().toString(36).substr(2, 9), foto: ev.target.result, cores: '', valorUnitario: 0, grade: { ...window.appState.config.gradePadrao } };
+                    window.appState.modelos.push(newModel);
+                    if (fIdx === files.length - 1) { window.renderModelos(); window.calculateTotals(); triggerSave(); }
                 };
-                window.appState.modelos.push(newModel);
-                window.renderModelos();
-                window.calculateTotals();
-                triggerSave();
-                window.showToast("Modelo adicionado!");
-            };
-        }
+                r.readAsDataURL(f);
+            });
+        };
 
-        // --- CEP e Logo ---
-        const btnCep = document.getElementById('btn-buscar-cep');
-        if (btnCep) {
-            btnCep.onclick = async () => {
-                const cep = elClienteCep.value.replace(/\D/g, '');
-                if (cep.length !== 8) return;
-                try {
-                    const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                    const data = await res.json();
-                    if (!data.erro) {
-                        elClienteEnd.value = data.logradouro;
-                        elClienteCid.value = data.localidade;
-                        elClienteEst.value = data.uf;
-                        updateCliente('endereco', data.logradouro);
-                        updateCliente('cidade', data.localidade);
-                        updateCliente('estado', data.uf);
-                    }
-                } catch (e) { window.showToast("Erro no CEP", "error"); }
-            };
-        }
-
-        const inputLogo = document.getElementById('input-logo');
-        if (inputLogo) {
-            inputLogo.onchange = (e) => {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    if (elLogoImg) {
-                        elLogoImg.src = ev.target.result;
-                        elLogoImg.classList.remove('hidden');
-                    }
-                    if (elLogoPlaceholder) elLogoPlaceholder.classList.add('hidden');
-                    updateCliente('logo', ev.target.result);
-                };
-                if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
-            };
-        }
-
-        const inputLote = document.getElementById('input-lote');
-        if (inputLote) {
-            inputLote.onchange = (e) => {
-                const files = Array.from(e.target.files);
-                files.forEach((f, fIdx) => {
-                    const r = new FileReader();
-                    r.onload = ev => {
-                        const newModel = { 
-                            id: Math.random().toString(36).substr(2, 9), 
-                            foto: ev.target.result, 
-                            cores: '', 
-                            valorUnitario: 0, 
-                            grade: { ...window.appState.config.gradePadrao } 
-                        };
-                        window.appState.modelos.push(newModel);
-                        if (fIdx === files.length - 1) {
-                            window.renderModelos();
-                            window.calculateTotals();
-                            triggerSave();
-                            window.showToast("Lote importado!");
-                        }
-                    };
-                    r.readAsDataURL(f);
-                });
-            };
-        }
-
-        // Inicialização Final
         window.updateUIFromState();
     </script>
 </body>
