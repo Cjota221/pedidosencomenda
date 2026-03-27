@@ -23,14 +23,17 @@
         }
         .toast-animate { animation: slideIn 0.3s ease-out forwards; }
 
-        /* Ajustes para Impressão e PDF */
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white !important; padding: 0 !important; }
-            .print-container { width: 100% !important; margin: 0 !important; box-shadow: none !important; border: none !important; }
+        /* Estilos específicos para o layout do PDF (oculto na interface) */
+        #pdf-render-area {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            width: 800px;
+            background: white;
+            padding: 40px;
+            color: black;
         }
 
-        /* Overlay de Carregamento para o PDF */
         #pdf-loader {
             display: none;
             position: fixed;
@@ -49,13 +52,16 @@
     <!-- Loader de PDF -->
     <div id="pdf-loader">
         <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-        <p class="mt-4 font-bold text-indigo-600 animate-pulse uppercase tracking-widest text-xs">A gerar ficheiro PDF...</p>
+        <p class="mt-4 font-bold text-indigo-600 animate-pulse uppercase tracking-widest text-xs">A formatar documento PDF...</p>
     </div>
+
+    <!-- ÁREA DE RENDERIZAÇÃO DO PDF (OCULTA) -->
+    <div id="pdf-render-area"></div>
 
     <!-- Interface Principal -->
     <div id="app-container">
-        <!-- Dashboard Superior (Fixo no UI, Oculto no PDF) -->
-        <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm no-print">
+        <!-- Dashboard Superior -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
             <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
                 <div class="flex items-center gap-3">
                     <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100">
@@ -68,8 +74,8 @@
                     <div>
                         <h1 class="text-lg font-black tracking-tighter">OrderSystem <span class="text-indigo-600">PRO</span></h1>
                         <div class="flex items-center gap-1.5">
-                            <div id="sync-indicator" class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                            <span id="sync-text" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Sincronizado</span>
+                            <div id="sync-indicator" class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                            <span id="sync-text" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">A aguardar nuvem...</span>
                         </div>
                     </div>
                 </div>
@@ -87,8 +93,8 @@
         </header>
 
         <!-- Conteúdo Principal -->
-        <main id="main-content" class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 print-container">
-            <!-- Sidebar (Dados da Cliente e Finanças) -->
+        <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Sidebar -->
             <aside class="lg:col-span-4 space-y-6">
                 <section class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
                     <div class="flex items-center gap-2 mb-2">
@@ -96,45 +102,45 @@
                         <h2 class="font-bold text-sm uppercase text-indigo-600">Dados da Cliente</h2>
                     </div>
                     
-                    <div class="flex items-center gap-4 py-2 border-b border-slate-50 mb-2 no-print">
-                        <div id="logo-container" class="w-16 h-16 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center relative overflow-hidden group">
-                            <span id="logo-placeholder" class="text-slate-300">
+                    <div class="flex items-center gap-4 py-2 border-b border-slate-50 mb-2">
+                        <div id="logo-container" class="w-16 h-16 bg-slate-100 rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center relative overflow-hidden">
+                            <span id="logo-placeholder" class="text-slate-400">
                                 <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                             </span>
                             <img id="logo-img" class="hidden w-full h-full object-contain" />
                             <input type="file" id="input-logo" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
                         </div>
-                        <p class="text-[10px] text-slate-400 leading-tight">A logomarca aparecerá no cabeçalho do PDF.</p>
+                        <p class="text-[10px] text-slate-400 leading-tight italic">Clique no ícone para carregar a logomarca da cliente.</p>
                     </div>
 
                     <div class="space-y-3">
                         <div>
                             <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Nome Completo</label>
-                            <input type="text" id="cliente-nome" class="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" placeholder="Ex: Boutique da Maria" />
+                            <input type="text" id="cliente-nome" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm transition-all" />
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">WhatsApp</label>
-                                <input type="text" id="cliente-telefone" class="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" placeholder="(00) 00000-0000" />
+                                <input type="text" id="cliente-telefone" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" />
                             </div>
                             <div>
                                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">CNPJ</label>
-                                <input type="text" id="cliente-cnpj" class="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" placeholder="00.000.000/0000-00" />
+                                <input type="text" id="cliente-cnpj" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" />
                             </div>
                         </div>
                         <div class="flex items-end gap-2">
                             <div class="flex-1">
                                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">CEP</label>
-                                <input type="text" id="cliente-cep" class="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" placeholder="00000-000" />
+                                <input type="text" id="cliente-cep" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" />
                             </div>
-                            <button id="btn-buscar-cep" class="p-2.5 bg-slate-100 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors no-print">
+                            <button id="btn-buscar-cep" class="p-2.5 bg-indigo-50 rounded-xl hover:bg-indigo-100 text-indigo-600 transition-colors">
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                             </button>
                         </div>
-                        <input type="text" id="cliente-endereco" class="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" placeholder="Endereço Completo" />
+                        <input type="text" id="cliente-endereco" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm" placeholder="Endereço" />
                         <div class="grid grid-cols-2 gap-3">
-                            <input type="text" id="cliente-cidade" class="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" placeholder="Cidade" />
-                            <input type="text" id="cliente-estado" class="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" placeholder="Estado" />
+                            <input type="text" id="cliente-cidade" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="Cidade" />
+                            <input type="text" id="cliente-estado" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="Estado" />
                         </div>
                     </div>
                 </section>
@@ -155,30 +161,30 @@
                             <input type="number" id="input-desconto" value="0" class="bg-slate-800 border-none rounded-xl p-2 text-sm outline-none focus:ring-1 focus:ring-rose-500" />
                         </div>
                         <div class="pt-2">
-                            <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Previsão de Entrega (15-20 dias úteis)</label>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Prazo de Entrega Estimado</label>
                             <p id="display-prazo" class="text-xs font-bold text-indigo-300 mt-1">Calculando...</p>
                         </div>
                         <div class="pt-4 border-t border-slate-800 flex justify-between items-center">
                             <span class="font-bold text-sm tracking-wider uppercase">Valor Total</span>
                             <span id="valor-final" class="text-2xl font-black text-indigo-400">R$ 0,00</span>
                         </div>
-                        <button id="btn-finalizar-pedido" class="w-full py-3 mt-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-lg active:scale-95 no-print">
+                        <button id="btn-finalizar-pedido" class="w-full py-3 mt-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-lg active:scale-95">
                             Finalizar e Arquivar
                         </button>
                     </div>
                 </section>
             </aside>
 
-            <!-- Lista de Modelos -->
+            <!-- Lista de Itens -->
             <div class="lg:col-span-8 space-y-6">
-                <div class="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200 no-print">
+                <div class="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200">
                     <div>
-                        <h2 class="text-xl font-black">Produtos do Pedido</h2>
-                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Itens da Encomenda</p>
+                        <h2 class="text-xl font-black">Itens do Pedido</h2>
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Criação de Modelos</p>
                     </div>
                     <div class="flex gap-2">
                         <button id="btn-add-modelo" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95 text-sm">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Novo Modelo
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Novo
                         </button>
                         <label class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-5 py-3 rounded-2xl font-bold transition-all cursor-pointer text-sm">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg> Lote
@@ -193,36 +199,26 @@
             </div>
         </main>
 
-        <!-- Seção de Histórico -->
-        <section class="max-w-7xl mx-auto px-4 py-12 border-t border-slate-200 no-print">
+        <!-- Histórico -->
+        <section class="max-w-7xl mx-auto px-4 py-12 border-t border-slate-200">
             <div class="flex items-center gap-3 mb-6">
-                <div class="bg-slate-800 p-2 rounded-xl text-white">
-                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div>
-                <h2 class="text-xl font-black">Histórico de Pedidos Finalizados</h2>
+                <h2 class="text-xl font-black">Histórico de Pedidos</h2>
             </div>
-            
-            <div id="historico-lista" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Pedidos antigos serão renderizados aqui -->
-            </div>
+            <div id="historico-lista" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </section>
 
-        <!-- Menu Flutuante -->
-        <div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-xl border border-slate-200 px-6 py-4 rounded-[2rem] shadow-2xl flex items-center gap-6 z-[100] no-print">
-            <div class="hidden md:block border-r border-slate-200 pr-6">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Gerar Documento</p>
-                <p class="text-[8px] text-slate-300 font-bold mt-1 tracking-widest uppercase">Exportação Direta</p>
+        <!-- Menu PDF Flutuante -->
+        <div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md border border-slate-200 px-6 py-4 rounded-[2rem] shadow-2xl flex items-center gap-6 z-[100]">
+            <div class="hidden md:block pr-6 border-r border-slate-200">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Documentação</p>
+                <p class="text-[8px] text-slate-300 font-bold mt-1 uppercase">OrderSystem PRO</p>
             </div>
             <div class="flex gap-3">
-                <button onclick="window.gerarPDF('cliente')" class="flex items-center gap-2 bg-slate-800 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-black transition-all">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Download PDF
+                <button onclick="window.gerarPDFDocumento('cliente')" class="flex items-center gap-2 bg-slate-800 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-black transition-all">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Gerar PDF Cliente
                 </button>
-                <button onclick="window.gerarPDF('producao')" class="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M16.5 9.4 7.55 4.24M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
-                        <path d="M3.29 7l8.71 5 8.71-5"/>
-                        <line x1="12" y1="22" x2="12" y2="12"/>
-                    </svg> Ficha de Produção
+                <button onclick="window.gerarPDFDocumento('producao')" class="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 9.4 7.55 4.24M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.29 7l8.71 5 8.71-5"/></svg> Gerar Ordem Produção
                 </button>
             </div>
         </div>
@@ -231,8 +227,8 @@
     <!-- Toast Container -->
     <div id="toast-container" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[110]"></div>
 
-    <!-- Scripts da App -->
     <script>
+        // Configuração Inicial
         window.appState = {
             cliente: { nome: '', telefone: '', cnpj: '', cep: '', endereco: '', bairro: '', cidade: '', estado: '', logo: '' },
             modelos: [],
@@ -255,12 +251,16 @@
             const dataMin = addDiasUteis(dataAtual, 15);
             const dataMax = addDiasUteis(dataAtual, 20);
             const format = (d) => d.toLocaleDateString('pt-BR');
-            const str = `Entre ${format(dataMin)} e ${format(dataMax)}`;
+            const str = `De ${format(dataMin)} até ${format(dataMax)}`;
             window.appState.prazoEntrega = str;
             const el = document.getElementById('display-prazo');
-            if (el) el.innerText = str;
+            if (el) el.innerText = str + " (15-20 dias úteis)";
         }
         calcularPrazoEntrega();
+
+        window.saveToCloud = () => {};
+        window.finalizarPedido = () => {};
+        window.eliminarDoHistorico = () => {};
     </script>
 
     <script type="module">
@@ -268,400 +268,299 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'order-system-pro';
 
-        let user = null;
-        let isFirstLoad = true;
+        if (configStr) {
+            const config = JSON.parse(configStr);
+            const app = initializeApp(config);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
 
-        const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        };
+            onAuthStateChanged(auth, async (u) => {
+                if (u) {
+                    const ind = document.getElementById('sync-indicator');
+                    const txt = document.getElementById('sync-text');
+                    if (ind) ind.className = "w-1.5 h-1.5 rounded-full bg-green-500";
+                    if (txt) txt.innerText = "Sincronizado";
 
-        onAuthStateChanged(auth, (u) => {
-            user = u;
-            if (user) {
-                // Listen to current draft
-                onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'currentOrder', 'main'), (docSnap) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        window.appState.cliente = data.cliente || window.appState.cliente;
-                        window.appState.modelos = data.modelos || [];
-                        window.appState.config = data.config || window.appState.config;
-                        if (isFirstLoad) { window.updateUIFromState(); isFirstLoad = false; }
-                        else { window.renderModelos(); window.calculateTotals(); }
-                    }
-                });
-
-                // Listen to history
-                const histColl = collection(db, 'artifacts', appId, 'users', user.uid, 'pedidos');
-                onSnapshot(histColl, (querySnapshot) => {
-                    const pedidos = [];
-                    querySnapshot.forEach((doc) => {
-                        pedidos.push({ id: doc.id, ...doc.data() });
+                    onSnapshot(doc(db, 'artifacts', appId, 'users', u.uid, 'currentOrder', 'main'), (ds) => {
+                        if (ds.exists()) {
+                            const d = ds.data();
+                            window.appState.cliente = d.cliente || window.appState.cliente;
+                            window.appState.modelos = d.modelos || [];
+                            window.appState.config = d.config || window.appState.config;
+                            window.updateUIFromState();
+                        }
                     });
-                    window.appState.historico = pedidos.sort((a, b) => new Date(b.dataFinalizado) - new Date(a.dataFinalizado));
-                    window.renderHistorico();
-                }, (err) => console.error("Histórico Error:", err));
-            }
-        });
-        initAuth();
 
-        window.saveToCloud = async () => {
-            if (!user || !db) return;
-            const indicator = document.getElementById('sync-indicator');
-            if (indicator) indicator.classList.replace('bg-green-500', 'bg-amber-400');
-            try {
-                await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'currentOrder', 'main'), {
-                    cliente: window.appState.cliente, modelos: window.appState.modelos, config: window.appState.config, lastUpdated: new Date().toISOString()
-                });
-                setTimeout(() => {
-                    if (indicator) indicator.classList.replace('bg-amber-400', 'bg-green-500');
-                }, 500);
-            } catch (e) { console.error(e); }
-        };
+                    onSnapshot(collection(db, 'artifacts', appId, 'users', u.uid, 'pedidos'), (qs) => {
+                        const ped = []; qs.forEach(d => ped.push({ id: d.id, ...d.data() }));
+                        window.appState.historico = ped.sort((a, b) => new Date(b.dataFinalizado) - new Date(a.dataFinalizado));
+                        window.renderHistorico();
+                    });
+                } else {
+                    if (typeof __initial_auth_token !== 'undefined') await signInWithCustomToken(auth, __initial_auth_token);
+                    else await signInAnonymously(auth);
+                }
+            });
 
-        window.finalizarPedido = async () => {
-            if (!user || !db || window.appState.modelos.length === 0) {
-                window.showToast("Adicione itens para finalizar o pedido", "error");
-                return;
-            }
+            window.saveToCloud = async () => {
+                if (!auth.currentUser) return;
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'currentOrder', 'main'), {
+                        cliente: window.appState.cliente, modelos: window.appState.modelos, config: window.appState.config, lastUpdated: new Date().toISOString()
+                    });
+                } catch (e) { console.error(e); }
+            };
 
-            const confirmFinalize = confirm("Deseja finalizar este pedido e guardá-lo no histórico? O rascunho atual será limpo.");
-            if (!confirmFinalize) return;
+            window.finalizarPedido = async () => {
+                if (window.appState.modelos.length === 0) return alert("Adicione itens!");
+                if (!confirm("Deseja arquivar este pedido? O rascunho será limpo.")) return;
+                try {
+                    const data = { ...window.appState, dataFinalizado: new Date().toISOString() };
+                    delete data.historico;
+                    await addDoc(collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'pedidos'), data);
+                    await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'currentOrder', 'main'), {
+                        cliente: { nome: '', telefone: '', cnpj: '', cep: '', endereco: '', bairro: '', cidade: '', estado: '', logo: window.appState.cliente.logo },
+                        modelos: [], config: { desconto: 0, frete: 0, gradePadrao: { '34': 0, '35': 0, '36': 0, '37': 0, '38': 0, '39': 0, '40': 0 } }
+                    });
+                    window.showToast("Pedido Finalizado!");
+                } catch (e) { console.error(e); }
+            };
 
-            try {
-                const pedidoData = {
-                    cliente: {...window.appState.cliente},
-                    modelos: [...window.appState.modelos],
-                    config: {...window.appState.config},
-                    prazoEntrega: window.appState.prazoEntrega,
-                    dataFinalizado: new Date().toISOString()
-                };
-
-                // Add to permanent history
-                await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'pedidos'), pedidoData);
-
-                // Clear draft
-                await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'currentOrder', 'main'), {
-                    cliente: { nome: '', telefone: '', cnpj: '', cep: '', endereco: '', bairro: '', cidade: '', estado: '', logo: window.appState.cliente.logo },
-                    modelos: [],
-                    config: { desconto: 0, frete: 0, gradePadrao: { '34': 0, '35': 0, '36': 0, '37': 0, '38': 0, '39': 0, '40': 0 } }
-                });
-
-                window.showToast("Pedido finalizado e arquivado!");
-                window.updateUIFromState();
-            } catch (e) {
-                console.error(e);
-                window.showToast("Erro ao finalizar pedido", "error");
-            }
-        };
-
-        window.eliminarDoHistorico = async (id) => {
-            if (!user || !db) return;
-            if (!confirm("Tem a certeza que deseja eliminar este pedido do histórico?")) return;
-            try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'pedidos', id));
-                window.showToast("Pedido removido!");
-            } catch (e) { console.error(e); }
-        };
+            window.eliminarDoHistorico = async (id) => {
+                if (confirm("Apagar do histórico?")) await deleteDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'pedidos', id));
+            };
+        }
     </script>
 
     <script>
-        const elModelosLista = document.getElementById('modelos-lista');
-        const elHistoricoLista = document.getElementById('historico-lista');
-        const elClienteNome = document.getElementById('cliente-nome');
-        const elClienteTelefone = document.getElementById('cliente-telefone');
-        const elClienteCnpj = document.getElementById('cliente-cnpj');
-        const elClienteCep = document.getElementById('cliente-cep');
-        const elClienteEnd = document.getElementById('cliente-endereco');
-        const elClienteCid = document.getElementById('cliente-cidade');
-        const elClienteEst = document.getElementById('cliente-estado');
-        const elLogoImg = document.getElementById('logo-img');
-        const elLogoPlaceholder = document.getElementById('logo-placeholder');
-        const elInputFrete = document.getElementById('input-frete');
-        const elInputDesconto = document.getElementById('input-desconto');
-
-        window.showToast = function(msg, type = "success") {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 toast-animate mb-4 ${type === 'success' ? 'bg-indigo-600' : 'bg-rose-600'} text-white`;
-            toast.innerHTML = `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg><span class="font-bold text-sm tracking-tight">${msg}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+        const elLista = document.getElementById('modelos-lista');
+        const elHist = document.getElementById('historico-lista');
+        
+        window.showToast = (msg, type = "success") => {
+            const t = document.createElement('div');
+            t.className = `px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 toast-animate mb-4 ${type === 'success' ? 'bg-indigo-600' : 'bg-rose-600'} text-white`;
+            t.innerHTML = `<span class="font-bold text-sm">${msg}</span>`;
+            document.getElementById('toast-container').appendChild(t);
+            setTimeout(() => t.remove(), 3000);
         };
 
-        window.updateUIFromState = function() {
+        window.calculateTotals = () => {
+            let p = 0, v = 0;
+            window.appState.modelos.forEach(m => {
+                const pc = Object.values(m.grade).reduce((a, b) => a + (parseInt(b) || 0), 0);
+                const nc = m.cores.split(',').filter(c => c.trim()).length || 1;
+                p += (pc * nc); v += (pc * nc * (parseFloat(m.valorUnitario) || 0));
+            });
+            const f = parseFloat(document.getElementById('input-frete').value) || 0;
+            const d = parseFloat(document.getElementById('input-desconto').value) || 0;
+            const total = v + f - d;
+            document.getElementById('total-pares-header').innerText = p;
+            document.getElementById('subtotal-header').innerText = `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('valor-mercadoria').innerText = `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('valor-final').innerText = `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        };
+
+        window.updateUIFromState = () => {
             const { cliente, config } = window.appState;
-            elClienteNome.value = cliente.nome || '';
-            elClienteTelefone.value = cliente.telefone || '';
-            elClienteCnpj.value = cliente.cnpj || '';
-            elClienteCep.value = cliente.cep || '';
-            elClienteEnd.value = cliente.endereco || '';
-            elClienteCid.value = cliente.cidade || '';
-            elClienteEst.value = cliente.estado || '';
-            if (cliente.logo) { elLogoImg.src = cliente.logo; elLogoImg.classList.remove('hidden'); elLogoPlaceholder.classList.add('hidden'); }
-            else { elLogoImg.classList.add('hidden'); elLogoPlaceholder.classList.remove('hidden'); }
-            elInputFrete.value = config.frete || 0;
-            elInputDesconto.value = config.desconto || 0;
-            window.renderModelos();
-            window.calculateTotals();
+            document.getElementById('cliente-nome').value = cliente.nome || '';
+            document.getElementById('cliente-telefone').value = cliente.telefone || '';
+            document.getElementById('cliente-cnpj').value = cliente.cnpj || '';
+            document.getElementById('cliente-cep').value = cliente.cep || '';
+            document.getElementById('cliente-endereco').value = cliente.endereco || '';
+            document.getElementById('cliente-cidade').value = cliente.cidade || '';
+            document.getElementById('cliente-estado').value = cliente.estado || '';
+            if (cliente.logo) { document.getElementById('logo-img').src = cliente.logo; document.getElementById('logo-img').classList.remove('hidden'); document.getElementById('logo-placeholder').classList.add('hidden'); }
+            document.getElementById('input-frete').value = config.frete || 0;
+            document.getElementById('input-desconto').value = config.desconto || 0;
+            window.renderModelos(); window.calculateTotals();
         };
 
-        window.calculateTotals = function() {
-            const { modelos } = window.appState;
-            let totalParesGlobal = 0; let subtotalProdutos = 0;
-            modelos.forEach(m => {
-                const paresCor = Object.values(m.grade).reduce((a, b) => a + (parseInt(b) || 0), 0);
-                const nCores = m.cores.split(',').filter(c => c.trim()).length || 1;
-                const totalModelo = paresCor * nCores;
-                totalParesGlobal += totalModelo;
-                subtotalProdutos += totalModelo * (parseFloat(m.valorUnitario) || 0);
-            });
-            const frete = parseFloat(elInputFrete.value) || 0;
-            const desconto = parseFloat(elInputDesconto.value) || 0;
-            const final = subtotalProdutos + frete - desconto;
-            document.getElementById('total-pares-header').innerText = totalParesGlobal;
-            document.getElementById('subtotal-header').innerText = `R$ ${final.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-            document.getElementById('valor-mercadoria').innerText = `R$ ${subtotalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-            document.getElementById('valor-final').innerText = `R$ ${final.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-        };
-
-        window.renderModelos = function() {
-            const { modelos } = window.appState;
-            elModelosLista.innerHTML = '';
-            if (modelos.length === 0) {
-                elModelosLista.innerHTML = `<div class="bg-slate-100/50 border-2 border-dashed border-slate-200 rounded-[2.5rem] py-20 flex flex-col items-center gap-3"><svg class="w-12 h-12 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg><p class="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]">Sem itens no rascunho</p></div>`;
+        window.renderModelos = () => {
+            elLista.innerHTML = '';
+            if (window.appState.modelos.length === 0) {
+                elLista.innerHTML = `<div class="py-12 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest border-2 border-dashed border-slate-200 rounded-3xl">Nenhum modelo</div>`;
                 return;
             }
-            modelos.forEach((m, idx) => {
-                const paresCor = Object.values(m.grade).reduce((a, b) => a + (parseInt(b) || 0), 0);
-                const nCores = m.cores.split(',').filter(c => c.trim()).length || 1;
-                const totalModelo = paresCor * nCores;
-                const subModelo = totalModelo * (parseFloat(m.valorUnitario) || 0);
+            window.appState.modelos.forEach((m, i) => {
+                const pc = Object.values(m.grade).reduce((a, b) => a + (parseInt(b) || 0), 0);
+                const nc = m.cores.split(',').filter(c => c.trim()).length || 1;
                 const card = document.createElement('div');
-                card.className = "bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm";
+                card.className = "bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm p-4 flex flex-col md:flex-row gap-6";
                 card.innerHTML = `
-                    <div class="flex flex-col md:flex-row">
-                        <div class="w-full md:w-48 h-48 relative bg-slate-100">
-                            <img src="${m.foto}" class="w-full h-full object-cover" />
-                            <div class="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded-lg uppercase">Item #${idx+1}</div>
-                            <input type="file" class="absolute inset-0 opacity-0 cursor-pointer no-print" onchange="window.updateModeloFoto('${m.id}', this)" />
+                    <div class="w-full md:w-40 h-40 bg-slate-50 rounded-2xl relative overflow-hidden shrink-0">
+                        <img src="${m.foto}" class="w-full h-full object-cover" />
+                        <input type="file" class="absolute inset-0 opacity-0 cursor-pointer" onchange="window.updateFoto('${m.id}', this)" />
+                    </div>
+                    <div class="flex-1 space-y-4">
+                        <div class="flex justify-between items-start">
+                            <input type="text" value="${m.cores}" oninput="window.upMod('${m.id}', 'cores', this.value)" class="font-bold border-b border-slate-100 outline-none w-full mr-4" placeholder="Cores separadas por vírgula" />
+                            <div class="text-right">
+                                <span class="text-[9px] font-bold text-slate-400 block">PREÇO UNIT.</span>
+                                <input type="number" value="${m.valorUnitario}" oninput="window.upMod('${m.id}', 'valorUnitario', this.value)" class="w-20 text-right font-black outline-none" />
+                            </div>
                         </div>
-                        <div class="flex-1 p-6 space-y-4">
-                            <div class="flex justify-between items-start gap-4">
-                                <div class="flex-1">
-                                    <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Cores</label>
-                                    <input type="text" value="${m.cores}" oninput="window.updateModeloData('${m.id}', 'cores', this.value)" class="w-full border-b border-slate-100 py-1 outline-none focus:border-indigo-500 font-bold text-sm" placeholder="Ex: Preto, Nude" />
-                                </div>
-                                <div class="text-right">
-                                    <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Valor Unit.</label>
-                                    <div class="flex items-center gap-1 font-black text-lg">
-                                        <span class="text-slate-300 text-sm">R$</span>
-                                        <input type="number" value="${m.valorUnitario}" oninput="window.updateModeloData('${m.id}', 'valorUnitario', this.value)" class="w-20 text-right outline-none bg-transparent" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-7 gap-2">
-                                ${Object.keys(m.grade).map(size => `<div class="flex flex-col items-center"><span class="text-[10px] font-bold text-slate-400 mb-1">${size}</span><input type="number" value="${m.grade[size]}" oninput="window.updateModeloGrade('${m.id}', '${size}', this.value)" class="w-full text-center py-2 bg-slate-50 rounded-xl border-none outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-sm" /></div>`).join('')}
-                            </div>
-                            <div class="flex justify-between items-center pt-4 border-t border-slate-50 no-print">
-                                <div class="flex gap-4">
-                                    <div class="bg-indigo-50 px-3 py-1 rounded-full text-[10px] font-bold text-indigo-600 uppercase tracking-widest">${totalModelo} pares</div>
-                                    <div class="bg-emerald-50 px-3 py-1 rounded-full text-[10px] font-bold text-emerald-600 uppercase tracking-widest">R$ ${subModelo.toLocaleString('pt-BR')}</div>
-                                </div>
-                                <div class="flex gap-2">
-                                    <button onclick="window.cloneModelo('${m.id}')" class="p-2 hover:bg-slate-50 text-slate-300 hover:text-indigo-600 transition-all"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
-                                    <button onclick="window.deleteModelo('${m.id}')" class="p-2 hover:bg-rose-50 text-slate-300 hover:text-rose-600 transition-all"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg></button>
-                                </div>
+                        <div class="grid grid-cols-7 gap-2">
+                            ${Object.keys(m.grade).map(s => `<div class="text-center"><span class="text-[9px] font-bold text-slate-400">${s}</span><input type="number" value="${m.grade[s]}" oninput="window.upGrade('${m.id}', '${s}', this.value)" class="w-full text-center bg-slate-50 rounded-lg p-1 text-sm font-bold" /></div>`).join('')}
+                        </div>
+                        <div class="flex justify-between items-center pt-2 border-t border-slate-50">
+                            <span class="text-[10px] font-bold text-indigo-600 uppercase">${pc * nc} pares totais</span>
+                            <div class="flex gap-2">
+                                <button onclick="window.clone('${m.id}')" class="p-2 text-slate-300 hover:text-indigo-600 transition-colors"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+                                <button onclick="window.del('${m.id}')" class="p-2 text-slate-300 hover:text-rose-600 transition-colors"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
                             </div>
                         </div>
                     </div>
                 `;
-                elModelosLista.appendChild(card);
+                elLista.appendChild(card);
             });
         };
 
-        window.renderHistorico = function() {
-            if (!elHistoricoLista) return;
-            elHistoricoLista.innerHTML = '';
-            
-            if (window.appState.historico.length === 0) {
-                elHistoricoLista.innerHTML = `<p class="col-span-full text-center text-slate-400 py-8 font-medium">Nenhum pedido arquivado.</p>`;
-                return;
-            }
-
+        window.renderHistorico = () => {
+            elHist.innerHTML = '';
             window.appState.historico.forEach(p => {
-                const data = new Date(p.dataFinalizado).toLocaleString('pt-BR');
-                const totalPares = p.modelos.reduce((acc, m) => {
-                    const paresCor = Object.values(m.grade).reduce((a, b) => a + (parseInt(b) || 0), 0);
-                    const nCores = m.cores.split(',').filter(c => c.trim()).length || 1;
-                    return acc + (paresCor * nCores);
-                }, 0);
-
-                const card = document.createElement('div');
-                card.className = "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-indigo-300 transition-all group";
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
-                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"/></svg>
-                        </div>
-                        <button onclick="window.eliminarDoHistorico('${p.id}')" class="text-slate-300 hover:text-rose-600 transition-colors">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                        </button>
-                    </div>
-                    <h3 class="font-black text-slate-800 uppercase tracking-tight truncate">${p.cliente.nome || 'Sem Nome'}</h3>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">${data}</p>
-                    <div class="flex justify-between items-center mt-6 pt-4 border-t border-slate-50">
-                        <span class="text-xs font-bold text-slate-500 uppercase">${totalPares} Pares</span>
-                        <button onclick="window.gerarPDFHistorico('${p.id}')" class="text-indigo-600 font-bold text-xs uppercase tracking-widest hover:underline">Ver PDF</button>
-                    </div>
-                `;
-                elHistoricoLista.appendChild(card);
+                const d = new Date(p.dataFinalizado).toLocaleDateString('pt-BR');
+                const div = document.createElement('div');
+                div.className = "bg-white p-4 rounded-2xl border border-slate-200 flex justify-between items-center";
+                div.innerHTML = `<div class="truncate mr-4"><p class="font-black text-xs uppercase truncate">${p.cliente.nome || 'Sem nome'}</p><p class="text-[9px] text-slate-400 font-bold">${d}</p></div>
+                                 <div class="flex gap-2 shrink-0"><button onclick="window.verHist('${p.id}')" class="bg-indigo-50 text-indigo-600 p-2 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>
+                                 <button onclick="window.eliminarDoHistorico('${p.id}')" class="text-slate-300 hover:text-rose-600 p-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button></div>`;
+                elHist.appendChild(div);
             });
         };
 
-        window.gerarPDFHistorico = async function(id) {
-            const pedido = window.appState.historico.find(p => p.id === id);
-            if (!pedido) return;
-            
-            // Backup current state to swap and restore later
-            const backup = JSON.parse(JSON.stringify(window.appState));
-            
-            // Temporary swap
-            window.appState.cliente = pedido.cliente;
-            window.appState.modelos = pedido.modelos;
-            window.appState.config = pedido.config;
-            window.appState.prazoEntrega = pedido.prazoEntrega;
-            
-            window.updateUIFromState();
-            
-            // Generate PDF
-            await window.gerarPDF('finalizado');
-            
-            // Restore original state
-            window.appState.cliente = backup.cliente;
-            window.appState.modelos = backup.modelos;
-            window.appState.config = backup.config;
-            window.appState.prazoEntrega = backup.prazoEntrega;
-            
-            window.updateUIFromState();
-        };
-
-        window.gerarPDF = async function(tipo) {
-            const loader = document.getElementById('pdf-loader');
-            loader.style.display = 'flex';
-            const main = document.getElementById('main-content');
-            try {
-                const canvas = await html2canvas(main, {
-                    scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff",
-                    onclone: (clonedDoc) => {
-                        const elementsToRemove = clonedDoc.querySelectorAll('.no-print, button, input[type="file"]');
-                        elementsToRemove.forEach(el => el.style.display = 'none');
-                        const printCont = clonedDoc.querySelector('.print-container');
-                        if (printCont) { printCont.style.width = '800px'; printCont.style.padding = '20px'; }
-                    }
-                });
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-                const nomeCliente = window.appState.cliente.nome || 'Cliente';
-                pdf.save(`Pedido_${nomeCliente.replace(/\s+/g, '_')}_${tipo}.pdf`);
-                window.showToast("PDF descarregado!");
-            } catch (err) { console.error(err); window.showToast("Erro ao gerar PDF", "error"); }
-            finally { loader.style.display = 'none'; }
-        };
-
-        let saveTimeout;
-        const triggerSave = () => { clearTimeout(saveTimeout); saveTimeout = setTimeout(() => window.saveToCloud(), 1000); };
-        const updateCliente = (field, val) => { window.appState.cliente[field] = val; window.calculateTotals(); triggerSave(); };
-
-        elClienteNome.oninput = (e) => updateCliente('nome', e.target.value);
-        elClienteTelefone.oninput = (e) => updateCliente('telefone', e.target.value);
-        elClienteCnpj.oninput = (e) => updateCliente('cnpj', e.target.value);
-        elClienteCep.oninput = (e) => updateCliente('cep', e.target.value);
-        elClienteEnd.oninput = (e) => updateCliente('endereco', e.target.value);
-        elClienteCid.oninput = (e) => updateCliente('cidade', e.target.value);
-        elClienteEst.oninput = (e) => updateCliente('estado', e.target.value);
-        elInputFrete.oninput = (e) => { window.appState.config.frete = e.target.value; window.calculateTotals(); triggerSave(); };
-        elInputDesconto.oninput = (e) => { window.appState.config.desconto = e.target.value; window.calculateTotals(); triggerSave(); };
-
-        window.updateModeloData = (id, field, val) => {
-            const index = window.appState.modelos.findIndex(m => m.id === id);
-            if (index > -1) { window.appState.modelos[index][field] = val; window.calculateTotals(); triggerSave(); }
-        };
-        window.updateModeloGrade = (id, size, val) => {
-            const index = window.appState.modelos.findIndex(m => m.id === id);
-            if (index > -1) { window.appState.modelos[index].grade[size] = parseInt(val) || 0; window.calculateTotals(); triggerSave(); }
-        };
-        window.updateModeloFoto = (id, input) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const index = window.appState.modelos.findIndex(m => m.id === id);
-                if (index > -1) { window.appState.modelos[index].foto = e.target.result; window.renderModelos(); triggerSave(); }
-            };
-            if(input.files[0]) reader.readAsDataURL(input.files[0]);
-        };
-        window.deleteModelo = (id) => { window.appState.modelos = window.appState.modelos.filter(m => m.id !== id); window.renderModelos(); window.calculateTotals(); triggerSave(); };
-        window.cloneModelo = (id) => {
-            const target = window.appState.modelos.find(m => m.id === id);
-            if (target) {
-                const clone = JSON.parse(JSON.stringify(target)); clone.id = Math.random().toString(36).substr(2, 9);
-                window.appState.modelos.push(clone); window.renderModelos(); window.calculateTotals(); triggerSave();
-            }
-        };
-
-        document.getElementById('btn-add-modelo').onclick = () => {
-            const newModel = { id: Math.random().toString(36).substr(2, 9), foto: 'https://placehold.co/300x300/e2e8f0/6366f1?text=Novo+Modelo', cores: '', valorUnitario: 0, grade: { ...window.appState.config.gradePadrao } };
-            window.appState.modelos.push(newModel); window.renderModelos(); window.calculateTotals(); triggerSave();
+        // Handlers
+        window.upMod = (id, f, v) => { const m = window.appState.modelos.find(x => x.id === id); if(m) m[f] = v; window.calculateTotals(); window.saveToCloud(); };
+        window.upGrade = (id, s, v) => { const m = window.appState.modelos.find(x => x.id === id); if(m) m.grade[s] = parseInt(v) || 0; window.calculateTotals(); window.saveToCloud(); };
+        window.updateFoto = (id, i) => { const r = new FileReader(); r.onload = e => { window.appState.modelos.find(x => x.id === id).foto = e.target.result; window.renderModelos(); window.saveToCloud(); }; r.readAsDataURL(i.files[0]); };
+        window.del = id => { window.appState.modelos = window.appState.modelos.filter(x => x.id !== id); window.renderModelos(); window.calculateTotals(); window.saveToCloud(); };
+        window.clone = id => { const m = JSON.parse(JSON.stringify(window.appState.modelos.find(x => x.id === id))); m.id = Math.random().toString(36).substr(2,9); window.appState.modelos.push(m); window.renderModelos(); window.calculateTotals(); window.saveToCloud(); };
+        
+        document.getElementById('btn-add-modelo').onclick = () => { 
+            window.appState.modelos.push({ id: Math.random().toString(36).substr(2,9), foto: 'https://placehold.co/300x300/e2e8f0/6366f1?text=Novo', cores: '', valorUnitario: 0, grade: {...window.appState.config.gradePadrao} });
+            window.renderModelos(); window.calculateTotals(); window.saveToCloud();
         };
 
         document.getElementById('btn-finalizar-pedido').onclick = () => window.finalizarPedido();
 
-        document.getElementById('btn-buscar-cep').onclick = async () => {
-            const cep = elClienteCep.value.replace(/\D/g, '');
-            if (cep.length !== 8) return;
+        // GERAÇÃO DE PDF PROFISSIONAL (CORRIGIDA)
+        window.gerarPDFDocumento = async (tipo) => {
+            const loader = document.getElementById('pdf-loader');
+            loader.style.display = 'flex';
+            
+            const area = document.getElementById('pdf-render-area');
+            const data = window.appState;
+            const hoje = new Date().toLocaleDateString('pt-BR');
+
+            // Montar Tabela de Produtos
+            let rows = data.modelos.map((m, i) => {
+                const pc = Object.values(m.grade).reduce((a, b) => a + b, 0);
+                const nc = m.cores.split(',').filter(c => c.trim()).length || 1;
+                const total = pc * nc;
+                const sub = total * m.valorUnitario;
+                const gradeStr = Object.entries(m.grade).filter(([_, v]) => v > 0).map(([k, v]) => `${k}:${v}`).join(' ');
+                
+                return `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px 0;"><img src="${m.foto}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px;"></td>
+                    <td style="padding: 10px 0; font-size: 11px;">
+                        <div style="font-weight: 800;">ITEM #${i+1}</div>
+                        <div style="color: #666;">Cores: ${m.cores}</div>
+                        <div style="background: #f8fafc; padding: 2px 5px; display: inline-block; margin-top: 4px; font-weight: bold;">${gradeStr}</div>
+                    </td>
+                    <td style="padding: 10px 0; text-align: center; font-weight: bold;">${total}</td>
+                    <td style="padding: 10px 0; text-align: right;">R$ ${parseFloat(m.valorUnitario).toFixed(2)}</td>
+                    <td style="padding: 10px 0; text-align: right; font-weight: 800;">R$ ${sub.toFixed(2)}</td>
+                </tr>`;
+            }).join('');
+
+            const totals = data.modelos.reduce((acc, m) => {
+                const total = Object.values(m.grade).reduce((a, b) => a + b, 0) * (m.cores.split(',').filter(c => c.trim()).length || 1);
+                acc.v += total * m.valorUnitario; acc.p += total; return acc;
+            }, {v:0, p:0});
+            
+            const totalFinal = totals.v + parseFloat(data.config.frete) - parseFloat(data.config.desconto);
+
+            // Template do Documento
+            area.innerHTML = `
+                <div style="padding: 20px; font-family: 'Inter', sans-serif;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 30px;">
+                        <div>
+                            <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #4f46e5;">${tipo === 'cliente' ? 'PEDIDO DE COMPRA' : 'ORDEM DE PRODUÇÃO'}</h1>
+                            <p style="margin: 5px 0; font-size: 12px; color: #666;">Data do Pedido: ${hoje}</p>
+                        </div>
+                        ${data.cliente.logo ? `<img src="${data.cliente.logo}" style="max-height: 60px; max-width: 150px;">` : ''}
+                    </div>
+
+                    <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 30px; display: grid; grid-template-cols: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <p style="margin: 0; font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Dados da Cliente</p>
+                            <p style="margin: 5px 0; font-size: 14px; font-weight: 800;">${data.cliente.nome || 'NÃO INFORMADO'}</p>
+                            <p style="margin: 0; font-size: 12px; color: #64748b;">${data.cliente.endereco}, ${data.cliente.cidade} - ${data.cliente.estado}</p>
+                            <p style="margin: 2px 0; font-size: 12px; color: #64748b;">Tel: ${data.cliente.telefone} | CNPJ: ${data.cliente.cnpj || '---'}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="margin: 0; font-size: 9px; font-weight: 800; color: #4f46e5; text-transform: uppercase;">Prazo de Entrega</p>
+                            <p style="margin: 5px 0; font-size: 16px; font-weight: 900; color: #1e293b;">${data.prazoEntrega}</p>
+                            <p style="margin: 0; font-size: 10px; color: #64748b;">(Estimativa de 15 a 20 dias úteis)</p>
+                        </div>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #000; text-align: left; font-size: 10px; text-transform: uppercase; color: #94a3b8;">
+                                <th style="padding-bottom: 10px;">Ref.</th>
+                                <th style="padding-bottom: 10px;">Descrição e Grade</th>
+                                <th style="padding-bottom: 10px; text-align: center;">Qtd</th>
+                                <th style="padding-bottom: 10px; text-align: right;">Unit.</th>
+                                <th style="padding-bottom: 10px; text-align: right;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+
+                    <div style="display: flex; justify-content: flex-end;">
+                        <div style="width: 250px; background: #1e293b; color: white; padding: 20px; border-radius: 15px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px; color: #94a3b8;">
+                                <span>Pares Totais</span><span>${totals.p}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px;">
+                                <span>Produtos</span><span>R$ ${totals.v.toFixed(2)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px;">
+                                <span>Frete (+)</span><span>R$ ${parseFloat(data.config.frete).toFixed(2)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px; color: #fb7185;">
+                                <span>Desconto (-)</span><span>R$ ${parseFloat(data.config.desconto).toFixed(2)}</span>
+                            </div>
+                            <div style="border-top: 1px solid #334155; padding-top: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 800; font-size: 12px; color: #818cf8;">TOTAL FINAL</span>
+                                <span style="font-weight: 900; font-size: 20px;">R$ ${totalFinal.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #94a3b8; font-size: 10px;">
+                        Documento gerado eletronicamente por OrderSystem PRO.
+                    </div>
+                </div>
+            `;
+
             try {
-                const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                const data = await res.json();
-                if (!data.erro) {
-                    elClienteEnd.value = data.logradouro; elClienteCid.value = data.localidade; elClienteEst.value = data.uf;
-                    updateCliente('endereco', data.logradouro); updateCliente('cidade', data.localidade); updateCliente('estado', data.uf);
-                }
-            } catch (e) { }
+                const canvas = await html2canvas(area, { scale: 2, useCORS: true });
+                const img = canvas.toDataURL('image/jpeg', 0.95);
+                const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+                const w = pdf.internal.pageSize.getWidth();
+                const h = (canvas.height * w) / canvas.width;
+                pdf.addImage(img, 'JPEG', 0, 0, w, h);
+                pdf.save(`Pedido_${data.cliente.nome.replace(/\s+/g,'_')}.pdf`);
+            } catch (e) { console.error(e); alert("Erro ao gerar PDF"); }
+            finally { loader.style.display = 'none'; area.innerHTML = ''; }
         };
 
-        document.getElementById('input-logo').onchange = (e) => {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                elLogoImg.src = ev.target.result; elLogoImg.classList.remove('hidden'); elLogoPlaceholder.classList.add('hidden');
-                updateCliente('logo', ev.target.result);
-            };
-            if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
-        };
-
-        document.getElementById('input-lote').onchange = (e) => {
-            const files = Array.from(e.target.files);
-            files.forEach((f, fIdx) => {
-                const r = new FileReader();
-                r.onload = ev => {
-                    const newModel = { id: Math.random().toString(36).substr(2, 9), foto: ev.target.result, cores: '', valorUnitario: 0, grade: { ...window.appState.config.gradePadrao } };
-                    window.appState.modelos.push(newModel);
-                    if (fIdx === files.length - 1) { window.renderModelos(); window.calculateTotals(); triggerSave(); }
-                };
-                r.readAsDataURL(f);
-            });
-        };
+        window.verHist = id => { const p = window.appState.historico.find(x => x.id === id); window.appState.cliente = p.cliente; window.appState.modelos = p.modelos; window.appState.config = p.config; window.appState.prazoEntrega = p.prazoEntrega; window.updateUIFromState(); window.gerarPDFDocumento('cliente'); };
 
         window.updateUIFromState();
     </script>
