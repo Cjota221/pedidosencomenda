@@ -1,579 +1,425 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, query, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { 
-  Plus, Trash2, Copy, Download, Package, Users, MapPin, 
-  Phone, Hash, Image as ImageIcon, Save, CheckCircle2, 
-  AlertCircle, ChevronDown, ChevronUp, GripVertical, 
-  DollarSign, Truck, Percent, Calculator, LogOut, Search
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OrderSystem PRO | Sistema de Pedidos</title>
+    <!-- Tailwind CSS para Estilização -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Bibliotecas Core: React, Babel (para JSX), e Firebase -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Geração de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
 
-// --- CONFIGURAÇÃO FIREBASE ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'order-system-pro';
+    <!-- Scripts do Firebase (ES Modules via CDN) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// --- COMPONENTES AUXILIARES ---
+        window.FirebaseCore = { initializeApp };
+        window.FirebaseAuth = { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken };
+        window.FirebaseStore = { getFirestore, doc, setDoc, onSnapshot };
+    </script>
 
-const InputMasked = ({ label, value, onChange, placeholder, maskType, icon: Icon, className = "" }) => {
-  const applyMask = (val) => {
-    if (!val) return "";
-    let clean = val.replace(/\D/g, "");
-    if (maskType === 'phone') {
-      clean = clean.substring(0, 11);
-      return clean.length > 10 
-        ? `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7)}`
-        : clean.length > 2 
-          ? `(${clean.slice(0, 2)}) ${clean.slice(2)}`
-          : clean;
-    }
-    if (maskType === 'cnpj') {
-      clean = clean.substring(0, 14);
-      return clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
-    }
-    if (maskType === 'cep') {
-      clean = clean.substring(0, 8);
-      return clean.length > 5 ? `${clean.slice(0, 5)}-${clean.slice(5)}` : clean;
-    }
-    return val;
-  };
+    <!-- Código da Aplicação React -->
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+        const { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = window.FirebaseAuth;
+        const { getFirestore, doc, setDoc, onSnapshot } = window.FirebaseStore;
+        const { initializeApp } = window.FirebaseCore;
 
-  return (
-    <div className={`flex flex-col gap-1 ${className}`}>
-      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</label>
-      <div className="relative">
-        {Icon && <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />}
-        <input
-          type="text"
-          value={applyMask(value)}
-          onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
-          placeholder={placeholder}
-          className={`w-full ${Icon ? 'pl-10' : 'px-4'} py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-slate-700 shadow-sm`}
-        />
-      </div>
-    </div>
-  );
-};
-
-export default function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [notification, setNotification] = useState(null);
-  
-  // Estado do Pedido
-  const [cliente, setCliente] = useState({
-    id: '',
-    nome: '',
-    telefone: '',
-    cnpj: '',
-    cep: '',
-    endereco: '',
-    bairro: '',
-    cidade: '',
-    estado: '',
-    logo: ''
-  });
-
-  const [modelos, setModelos] = useState([]);
-  const [config, setConfig] = useState({
-    dataPedido: new Date().toISOString().split('T')[0],
-    desconto: 0,
-    frete: 0,
-    gradePadrao: { '34': 0, '35': 0, '36': 0, '37': 0, '38': 0, '39': 0, '40': 0 }
-  });
-
-  // --- AUTH & DATA ---
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (e) { console.error(e); }
-    };
-    initAuth();
-    return onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
-  }, []);
-
-  // Carregar dados salvos
-  useEffect(() => {
-    if (!user) return;
-    const unsub = onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'currentOrder', 'main'), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setCliente(data.cliente || cliente);
-        setModelos(data.modelos || []);
-        setConfig(data.config || config);
-      }
-    }, (err) => console.error(err));
-    return unsub;
-  }, [user]);
-
-  // Salvar automaticamente
-  const handleSave = async (updatedCliente, updatedModelos, updatedConfig) => {
-    if (!user) return;
-    setSaving(true);
-    try {
-      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'currentOrder', 'main'), {
-        cliente: updatedCliente || cliente,
-        modelos: updatedModelos || modelos,
-        config: updatedConfig || config,
-        lastUpdated: new Date().toISOString()
-      });
-      showNotification("Progresso salvo!", "success");
-    } catch (e) {
-      showNotification("Erro ao salvar", "error");
-    }
-    setSaving(false);
-  };
-
-  const showNotification = (msg, type = "success") => {
-    setNotification({ msg, type });
-    setTimeout(() => setNotification(null), 3000);
-  };
-
-  // --- LÓGICA DE NEGÓCIO ---
-  const buscarCep = async () => {
-    if (cliente.cep.length !== 8) return;
-    try {
-      const res = await fetch(`https://viacep.com.br/ws/${cliente.cep}/json/`);
-      const data = await res.json();
-      if (!data.erro) {
-        const newCliente = {
-          ...cliente,
-          endereco: data.logradouro,
-          bairro: data.bairro,
-          cidade: data.localidade,
-          estado: data.uf
+        // --- Ícones Inline SVG corrigidos com Fragmentos React ---
+        const Icon = ({ name, className = "w-5 h-5" }) => {
+            const icons = {
+                plus: <path d="M12 5v14M5 12h14" />,
+                trash: <><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6" /></>,
+                copy: <><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></>,
+                download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></>,
+                package: <><path d="M16.5 9.4 7.55 4.24M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><polyline points="3.29 7 l8.71 5 8.71 -5" /><line x1="12" y1="22" x2="12" y2="12" /></>,
+                users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M18 7a4 4 0 0 0-3-3.87" /></>,
+                save: <><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></>,
+                search: <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>,
+                phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />,
+                calc: <><rect width="16" height="20" x="4" y="2" rx="2" /><line x1="8" y1="6" x2="16" y2="6" /><line x1="16" y1="14" x2="16" y2="18" /><path d="M16 10h.01" /><path d="M12 10h.01" /><path d="M8 10h.01" /><path d="M12 14h.01" /><path d="M8 14h.01" /><path d="M12 18h.01" /><path d="M8 18h.01" /></>
+            };
+            return (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {icons[name]}
+                </svg>
+            );
         };
-        setCliente(newCliente);
-        handleSave(newCliente, modelos, config);
-      }
-    } catch (e) { showNotification("Erro ao buscar CEP", "error"); }
-  };
 
-  const addModelo = (image = null) => {
-    const newModelo = {
-      id: Math.random().toString(36).substr(2, 9),
-      foto: image || 'https://placehold.co/400x400/indigo/white?text=Novo+Modelo',
-      cores: '',
-      valorUnitario: 0,
-      grade: { ...config.gradePadrao }
-    };
-    const newModelos = [...modelos, newModelo];
-    setModelos(newModelos);
-    handleSave(cliente, newModelos, config);
-  };
+        // --- Inicialização do Firebase ---
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'order-system-pro';
 
-  const cloneModelo = (modelo) => {
-    const cloned = { ...modelo, id: Math.random().toString(36).substr(2, 9) };
-    const newModelos = [...modelos, cloned];
-    setModelos(newModelos);
-    handleSave(cliente, newModelos, config);
-  };
+        const InputMasked = ({ label, value, onChange, placeholder, maskType, icon, className = "" }) => {
+            const applyMask = (val) => {
+                if (!val) return "";
+                let clean = val.replace(/\D/g, "");
+                if (maskType === 'phone') {
+                    clean = clean.substring(0, 11);
+                    return clean.length > 10 ? `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7)}` : clean.length > 2 ? `(${clean.slice(0, 2)}) ${clean.slice(2)}` : clean;
+                }
+                if (maskType === 'cnpj') {
+                    clean = clean.substring(0, 14);
+                    return clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+                }
+                if (maskType === 'cep') {
+                    clean = clean.substring(0, 8);
+                    return clean.length > 5 ? `${clean.slice(0, 5)}-${clean.slice(5)}` : clean;
+                }
+                return val;
+            };
 
-  const removeModelo = (id) => {
-    const newModelos = modelos.filter(m => m.id !== id);
-    setModelos(newModelos);
-    handleSave(cliente, newModelos, config);
-  };
+            return (
+                <div className={`flex flex-col gap-1 ${className}`}>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{label}</label>
+                    <div className="relative">
+                        {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Icon name={icon} className="w-4 h-4" /></div>}
+                        <input
+                            type="text"
+                            value={applyMask(value)}
+                            onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
+                            placeholder={placeholder}
+                            className={`w-full ${icon ? 'pl-10' : 'px-4'} py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-slate-700 shadow-sm text-sm`}
+                        />
+                    </div>
+                </div>
+            );
+        };
 
-  const updateModelo = (id, field, value) => {
-    const newModelos = modelos.map(m => m.id === id ? { ...m, [field]: value } : m);
-    setModelos(newModelos);
-  };
-
-  const updateGradeModelo = (id, size, val) => {
-    const newModelos = modelos.map(m => {
-      if (m.id === id) {
-        return { ...m, grade: { ...m.grade, [size]: parseInt(val) || 0 } };
-      }
-      return m;
-    });
-    setModelos(newModelos);
-  };
-
-  const aplicarGradePadrao = () => {
-    const newModelos = modelos.map(m => ({ ...m, grade: { ...config.gradePadrao } }));
-    setModelos(newModelos);
-    handleSave(cliente, newModelos, config);
-    showNotification("Grade padrão aplicada!");
-  };
-
-  // --- CÁLCULOS ---
-  const calcularTotalPares = (modelo) => {
-    const paresPorCor = Object.values(modelo.grade).reduce((a, b) => a + b, 0);
-    const numCores = modelo.cores.split(',').filter(c => c.trim() !== '').length || 1;
-    return { paresPorCor, total: paresPorCor * numCores };
-  };
-
-  const stats = modelos.reduce((acc, m) => {
-    const { total } = calcularTotalPares(m);
-    acc.pares += total;
-    acc.valor += total * (m.valorUnitario || 0);
-    return acc;
-  }, { pares: 0, valor: 0 });
-
-  const valorFinal = stats.valor + parseFloat(config.frete) - parseFloat(config.desconto);
-
-  // --- GERAÇÃO DE PDF (Simulada para visualização) ---
-  const handleGerarPDF = (tipo) => {
-    showNotification(`Gerando PDF de ${tipo}...`, "success");
-    // Aqui integraria jsPDF como no original, mas com layout melhorado
-    window.print(); 
-  };
-
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-slate-500 font-medium">Carregando Sistema Pro...</p>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-slate-50 pb-20 font-sans text-slate-900">
-      {/* Notificação Flutuante */}
-      {notification && (
-        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl transition-all animate-bounce ${
-          notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-        }`}>
-          {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-          <span className="font-semibold">{notification.msg}</span>
-        </div>
-      )}
-
-      {/* Header / Dashboard */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2.5 rounded-2xl shadow-lg shadow-indigo-200">
-              <Package className="text-white w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-extrabold tracking-tight text-slate-800">OrderSystem <span className="text-indigo-600">PRO</span></h1>
-              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1">
-                {saving ? "Sincronizando..." : "Sincronizado na Nuvem"}
-                <div className={`w-1.5 h-1.5 rounded-full ${saving ? 'bg-amber-400 animate-pulse' : 'bg-green-500'}`} />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-6 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Total de Pares</span>
-              <span className="text-xl font-black text-indigo-600">{stats.pares}</span>
-            </div>
-            <div className="h-10 w-px bg-slate-200 hidden md:block" />
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Subtotal</span>
-              <span className="text-xl font-black text-slate-800">R$ {valorFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            </div>
-            <button 
-              onClick={() => handleSave()}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-xl transition-all shadow-md active:scale-95"
-              title="Forçar Salvamento"
-            >
-              <Save className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Lado Esquerdo: Dados do Cliente e Configs */}
-        <div className="lg:col-span-4 space-y-6">
-          <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center gap-3 mb-6">
-              <Users className="text-indigo-600 w-5 h-5" />
-              <h2 className="text-lg font-bold">Identificação</h2>
-            </div>
+        function App() {
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [saving, setSaving] = useState(false);
+            const [notification, setNotification] = useState(null);
             
-            <div className="space-y-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Logo da Cliente</label>
-                <div className="flex items-center gap-4 group">
-                  <div className="w-20 h-20 bg-slate-100 rounded-2xl overflow-hidden border-2 border-dashed border-slate-200 flex items-center justify-center relative">
-                    {cliente.logo ? (
-                      <img src={cliente.logo} className="w-full h-full object-contain" alt="Logo" />
-                    ) : (
-                      <ImageIcon className="text-slate-300 w-8 h-8" />
-                    )}
-                    <input 
-                      type="file" 
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      onChange={(e) => {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => setCliente({...cliente, logo: ev.target.result});
-                        if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
-                      }}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-[10px] text-slate-400 leading-tight">Clique para carregar a marca da sua cliente. Formatos aceitos: JPG, PNG.</p>
-                  </div>
-                </div>
-              </div>
+            const [cliente, setCliente] = useState({ nome: '', telefone: '', cnpj: '', cep: '', endereco: '', bairro: '', cidade: '', estado: '', logo: '' });
+            const [modelos, setModelos] = useState([]);
+            const [config, setConfig] = useState({ desconto: 0, frete: 0, gradePadrao: { '34': 0, '35': 0, '36': 0, '37': 0, '38': 0, '39': 0, '40': 0 } });
 
-              <InputMasked label="Nome Completo / Razão" value={cliente.nome} onChange={(v) => setCliente({...cliente, nome: v})} placeholder="Nome da cliente" />
-              <div className="grid grid-cols-2 gap-4">
-                <InputMasked label="WhatsApp" value={cliente.telefone} onChange={(v) => setCliente({...cliente, telefone: v})} maskType="phone" placeholder="(00) 00000-0000" icon={Phone} />
-                <InputMasked label="CNPJ" value={cliente.cnpj} onChange={(v) => setCliente({...cliente, cnpj: v})} maskType="cnpj" placeholder="00.000.000/0000-00" />
-              </div>
-              
-              <div className="h-px bg-slate-100 my-2" />
-              
-              <div className="flex items-end gap-2">
-                <InputMasked label="CEP" value={cliente.cep} onChange={(v) => setCliente({...cliente, cep: v})} maskType="cep" placeholder="00000-000" className="flex-1" />
-                <button onClick={buscarCep} className="p-3 bg-slate-100 rounded-xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                  <Search className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <InputMasked label="Endereço" value={cliente.endereco} onChange={(v) => setCliente({...cliente, endereco: v})} placeholder="Rua, Número, Comp." icon={MapPin} />
-              <div className="grid grid-cols-2 gap-4">
-                <InputMasked label="Cidade" value={cliente.cidade} onChange={(v) => setCliente({...cliente, cidade: v})} />
-                <InputMasked label="Estado (UF)" value={cliente.estado} onChange={(v) => setCliente({...cliente, estado: v})} />
-              </div>
-            </div>
-          </section>
+            // Autenticação
+            useEffect(() => {
+                const initAuth = async () => {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                };
+                initAuth();
+                return onAuthStateChanged(auth, (u) => { setUser(u); setLoading(false); });
+            }, []);
 
-          <section className="bg-indigo-900 rounded-3xl p-6 text-white shadow-xl shadow-indigo-200">
-            <div className="flex items-center gap-3 mb-6">
-              <Calculator className="text-indigo-300 w-5 h-5" />
-              <h2 className="text-lg font-bold">Resumo Financeiro</h2>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex justify-between text-indigo-200 font-medium">
-                <span>Mercadoria</span>
-                <span>R$ {stats.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-              </div>
-              
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-indigo-300">Frete (+)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 text-sm">R$</span>
-                  <input 
-                    type="number" 
-                    value={config.frete}
-                    onChange={(e) => setConfig({...config, frete: e.target.value})}
-                    className="w-full bg-indigo-800/50 border border-indigo-700 rounded-xl py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
+            // Sincronização de Dados
+            useEffect(() => {
+                if (!user) return;
+                const unsub = onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'currentOrder', 'main'), (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        setCliente(prev => ({...prev, ...data.cliente}));
+                        setModelos(data.modelos || []);
+                        setConfig(prev => ({...prev, ...data.config}));
+                    }
+                }, (err) => console.error("Erro no Firestore:", err));
+                return unsub;
+            }, [user]);
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-indigo-300">Desconto (-)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 text-sm">R$</span>
-                  <input 
-                    type="number" 
-                    value={config.desconto}
-                    onChange={(e) => setConfig({...config, desconto: e.target.value})}
-                    className="w-full bg-indigo-800/50 border border-indigo-700 rounded-xl py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div className="h-px bg-indigo-800 my-4" />
-              
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-bold uppercase tracking-widest text-indigo-300">Total Final</span>
-                <span className="text-2xl font-black">R$ {valorFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* Lado Direito: Modelos */}
-        <div className="lg:col-span-8 space-y-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-            <div>
-              <h2 className="text-xl font-black text-slate-800">Itens do Pedido</h2>
-              <p className="text-sm text-slate-400 font-medium">Gerencie os modelos e grades abaixo.</p>
-            </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => addModelo()}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-indigo-100 active:scale-95"
-              >
-                <Plus className="w-5 h-5" /> Adicionar Modelo
-              </button>
-              <label className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-5 py-3 rounded-2xl font-bold transition-all shadow-lg cursor-pointer active:scale-95">
-                <ImageIcon className="w-5 h-5" /> Lote
-                <input 
-                  type="file" 
-                  multiple 
-                  className="hidden" 
-                  accept="image/*"
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files);
-                    files.forEach(file => {
-                      const reader = new FileReader();
-                      reader.onload = (ev) => addModelo(ev.target.result);
-                      reader.readAsDataURL(file);
+            const handleSave = async (c = cliente, m = modelos, conf = config) => {
+                if (!user) return;
+                setSaving(true);
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'currentOrder', 'main'), { 
+                        cliente: c, 
+                        modelos: m, 
+                        config: conf, 
+                        lastUpdated: new Date().toISOString() 
                     });
-                  }}
-                />
-              </label>
-            </div>
-          </div>
+                    showNotification("Progresso guardado!");
+                } catch (e) { showNotification("Erro ao guardar dados", "error"); }
+                setSaving(false);
+            };
 
-          <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <Hash className="text-indigo-600 w-5 h-5" />
-                <h3 className="font-bold">Grade Padrão</h3>
-              </div>
-              <button 
-                onClick={aplicarGradePadrao}
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-lg transition-colors"
-              >
-                Aplicar a todos os itens
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-4">
-              {Object.keys(config.gradePadrao).map(size => (
-                <div key={size} className="flex flex-col gap-1 items-center">
-                  <span className="text-[10px] font-bold text-slate-400">{size}</span>
-                  <input 
-                    type="number" 
-                    value={config.gradePadrao[size]}
-                    onChange={(e) => setConfig({...config, gradePadrao: {...config.gradePadrao, [size]: e.target.value}})}
-                    className="w-12 h-10 text-center border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold"
-                  />
+            const showNotification = (msg, type = "success") => {
+                setNotification({ msg, type });
+                setTimeout(() => setNotification(null), 3000);
+            };
+
+            const buscarCep = async () => {
+                if (cliente.cep.length !== 8) return;
+                try {
+                    const res = await fetch(`https://viacep.com.br/ws/${cliente.cep}/json/`);
+                    const data = await res.json();
+                    if (!data.erro) {
+                        const newCliente = { ...cliente, endereco: data.logradouro, bairro: data.bairro, cidade: data.localidade, estado: data.uf };
+                        setCliente(newCliente);
+                        handleSave(newCliente);
+                    }
+                } catch (e) { showNotification("Erro ao buscar CEP", "error"); }
+            };
+
+            const addModelo = (img = null) => {
+                const newModel = { id: Math.random().toString(36).substr(2, 9), foto: img || 'https://placehold.co/300x300/e2e8f0/6366f1?text=Novo+Modelo', cores: '', valorUnitario: 0, grade: { ...config.gradePadrao } };
+                const updated = [...modelos, newModel];
+                setModelos(updated);
+                handleSave(cliente, updated);
+            };
+
+            const updateGrade = (mid, size, val) => {
+                const updated = modelos.map(m => m.id === mid ? { ...m, grade: { ...m.grade, [size]: parseInt(val) || 0 } } : m);
+                setModelos(updated);
+                handleSave(cliente, updated);
+            };
+
+            const stats = modelos.reduce((acc, m) => {
+                const paresCor = Object.values(m.grade).reduce((a, b) => a + b, 0);
+                const nCores = m.cores.split(',').filter(c => c.trim()).length || 1;
+                const totalPares = paresCor * nCores;
+                acc.pares += totalPares;
+                acc.valor += totalPares * (m.valorUnitario || 0);
+                return acc;
+            }, { pares: 0, valor: 0 });
+
+            const valorFinal = stats.valor + parseFloat(config.frete || 0) - parseFloat(config.desconto || 0);
+
+            if (loading) return (
+                <div className="h-screen flex flex-col items-center justify-center gap-4 bg-white">
+                    <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="font-bold text-slate-400 text-xs tracking-widest uppercase">A preparar OrderSystem...</span>
                 </div>
-              ))}
-            </div>
-          </section>
+            );
 
-          <div className="space-y-6">
-            {modelos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 bg-slate-100/50 rounded-3xl border-2 border-dashed border-slate-200">
-                <Package className="w-12 h-12 text-slate-300 mb-4" />
-                <p className="text-slate-400 font-medium">Nenhum modelo adicionado ainda.</p>
-              </div>
-            ) : (
-              modelos.map((m, idx) => (
-                <div key={m.id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-200 group relative">
-                  <div className="flex flex-col md:flex-row">
-                    {/* Foto do Modelo */}
-                    <div className="md:w-56 h-56 md:h-auto relative bg-slate-50 group-hover:brightness-95 transition-all">
-                      <img src={m.foto} className="w-full h-full object-cover" alt="Modelo" />
-                      <div className="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-800">
-                        ITEM #{idx + 1}
-                      </div>
-                      <input 
-                        type="file" 
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        onChange={(e) => {
-                          const reader = new FileReader();
-                          reader.onload = (ev) => updateModelo(m.id, 'foto', ev.target.result);
-                          if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
-                        }}
-                      />
+            return (
+                <div className="min-h-screen pb-20">
+                    {/* Dashboard Superior */}
+                    <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+                        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100"><Icon name="package" /></div>
+                                <div>
+                                    <h1 className="text-lg font-black tracking-tighter">OrderSystem <span className="text-indigo-600">PRO</span></h1>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${saving ? 'bg-amber-400 animate-pulse' : 'bg-green-500'}`}></div>
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{saving ? 'A Guardar...' : 'Nuvem Ativa'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-6">
+                                <div className="text-right">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase">Pares Totais</p>
+                                    <p className="text-xl font-black text-indigo-600">{stats.pares}</p>
+                                </div>
+                                <div className="text-right border-l pl-6 border-slate-200">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase">Subtotal</p>
+                                    <p className="text-xl font-black">R$ {valorFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Conteúdo Principal */}
+                    <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        {/* Sidebar de Configurações */}
+                        <aside className="lg:col-span-4 space-y-6">
+                            <section className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                                <div className="flex items-center gap-2 mb-2"><Icon name="users" className="text-indigo-600 w-4 h-4" /><h2 className="font-bold text-sm uppercase">Dados da Cliente</h2></div>
+                                
+                                <div className="flex items-center gap-4 py-2 border-b border-slate-50 mb-2">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center relative overflow-hidden group">
+                                        {cliente.logo ? <img src={cliente.logo} className="w-full h-full object-contain" /> : <Icon name="plus" className="text-slate-300" />}
+                                        <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
+                                            const reader = new FileReader();
+                                            reader.onload = ev => { setCliente({...cliente, logo: ev.target.result}); handleSave({...cliente, logo: ev.target.result}); };
+                                            if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+                                        }} />
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 leading-tight">Carregue a logomarca para personalizar os documentos.</p>
+                                </div>
+
+                                <InputMasked label="Nome Completo" value={cliente.nome} onChange={v => setCliente({...cliente, nome: v})} placeholder="Ex: Boutique da Maria" />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <InputMasked label="WhatsApp" value={cliente.telefone} maskType="phone" onChange={v => setCliente({...cliente, telefone: v})} icon="phone" />
+                                    <InputMasked label="CNPJ (Opcional)" value={cliente.cnpj} maskType="cnpj" onChange={v => setCliente({...cliente, cnpj: v})} />
+                                </div>
+                                <div className="flex items-end gap-2">
+                                    <InputMasked label="CEP" value={cliente.cep} maskType="cep" onChange={v => setCliente({...cliente, cep: v})} className="flex-1" />
+                                    <button onClick={buscarCep} className="p-2.5 bg-slate-100 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors"><Icon name="search" /></button>
+                                </div>
+                                <InputMasked label="Endereço" value={cliente.endereco} onChange={v => setCliente({...cliente, endereco: v})} />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <InputMasked label="Cidade" value={cliente.cidade} onChange={v => setCliente({...cliente, cidade: v})} />
+                                    <InputMasked label="Estado" value={cliente.estado} onChange={v => setCliente({...cliente, estado: v})} />
+                                </div>
+                            </section>
+
+                            <section className="bg-slate-900 p-6 rounded-3xl text-white shadow-xl space-y-4">
+                                <div className="flex items-center gap-2 border-b border-slate-800 pb-3"><Icon name="calc" className="text-indigo-400" /><h2 className="font-bold">Finanças</h2></div>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between text-xs text-slate-400"><span>Produtos</span><span>R$ {stats.valor.toLocaleString('pt-BR')}</span></div>
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[9px] font-bold text-indigo-400 uppercase">Frete (+)</label>
+                                        <input type="number" value={config.frete} onChange={e => { const updated = {...config, frete: e.target.value}; setConfig(updated); handleSave(cliente, modelos, updated); }} className="bg-slate-800 border-none rounded-xl p-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500" />
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[9px] font-bold text-rose-400 uppercase">Desconto (-)</label>
+                                        <input type="number" value={config.desconto} onChange={e => { const updated = {...config, desconto: e.target.value}; setConfig(updated); handleSave(cliente, modelos, updated); }} className="bg-slate-800 border-none rounded-xl p-2 text-sm outline-none focus:ring-1 focus:ring-rose-500" />
+                                    </div>
+                                    <div className="pt-4 border-t border-slate-800 flex justify-between items-center">
+                                        <span className="font-bold text-sm">TOTAL</span>
+                                        <span className="text-2xl font-black text-indigo-400">R$ {valorFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                </div>
+                            </section>
+                        </aside>
+
+                        {/* Lista de Modelos */}
+                        <div className="lg:col-span-8 space-y-6">
+                            <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200">
+                                <div>
+                                    <h2 className="text-xl font-black">Produtos do Pedido</h2>
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Controle de Produção</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => addModelo()} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95 text-sm">
+                                        <Icon name="plus" /> Novo Modelo
+                                    </button>
+                                    <label className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-5 py-3 rounded-2xl font-bold transition-all cursor-pointer text-sm">
+                                        <Icon name="copy" /> Lote
+                                        <input type="file" multiple className="hidden" onChange={e => {
+                                            const files = Array.from(e.target.files);
+                                            files.forEach(f => { const r = new FileReader(); r.onload = ev => addModelo(ev.target.result); r.readAsDataURL(f); });
+                                        }} />
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {modelos.length === 0 ? (
+                                    <div className="bg-slate-100/50 border-2 border-dashed border-slate-200 rounded-[2.5rem] py-20 flex flex-col items-center gap-3">
+                                        <Icon name="package" className="w-12 h-12 text-slate-300" />
+                                        <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]">Adicione o primeiro modelo para começar</p>
+                                    </div>
+                                ) : (
+                                    modelos.map((m, idx) => {
+                                        const pCor = Object.values(m.grade).reduce((a, b) => a + b, 0);
+                                        const nC = m.cores.split(',').filter(c => c.trim()).length || 1;
+                                        return (
+                                            <div key={m.id} className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm group">
+                                                <div className="flex flex-col md:flex-row">
+                                                    <div className="w-full md:w-48 h-48 relative bg-slate-100">
+                                                        <img src={m.foto} className="w-full h-full object-cover" />
+                                                        <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded-lg uppercase">Item #{idx+1}</div>
+                                                        <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
+                                                            const r = new FileReader();
+                                                            r.onload = ev => {
+                                                                const updated = modelos.map(mod => mod.id === m.id ? {...mod, foto: ev.target.result} : mod);
+                                                                setModelos(updated); handleSave(cliente, updated);
+                                                            };
+                                                            if(e.target.files[0]) r.readAsDataURL(e.target.files[0]);
+                                                        }} />
+                                                    </div>
+                                                    <div className="flex-1 p-6 space-y-4">
+                                                        <div className="flex justify-between items-start gap-4">
+                                                            <div className="flex-1">
+                                                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Cores (Preto, Nude...)</label>
+                                                                <input type="text" value={m.cores} onChange={e => {
+                                                                    const updated = modelos.map(mod => mod.id === m.id ? {...mod, cores: e.target.value} : mod);
+                                                                    setModelos(updated); handleSave(cliente, updated);
+                                                                }} className="w-full border-b border-slate-100 py-1 outline-none focus:border-indigo-500 font-bold text-sm" placeholder="Lista de cores" />
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Valor Unitário</label>
+                                                                <div className="flex items-center gap-1 font-black text-lg">
+                                                                    <span className="text-slate-300">R$</span>
+                                                                    <input type="number" value={m.valorUnitario} onChange={e => {
+                                                                        const updated = modelos.map(mod => mod.id === m.id ? {...mod, valorUnitario: e.target.value} : mod);
+                                                                        setModelos(updated); handleSave(cliente, updated);
+                                                                    }} className="w-20 text-right outline-none bg-transparent" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-7 gap-2">
+                                                            {Object.keys(m.grade).map(size => (
+                                                                <div key={size} className="flex flex-col items-center">
+                                                                    <span className="text-[10px] font-bold text-slate-400 mb-1">{size}</span>
+                                                                    <input type="number" value={m.grade[size]} onChange={e => updateGrade(m.id, size, e.target.value)} className="w-full text-center py-2 bg-slate-50 rounded-xl border-none outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-sm" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+
+                                                        <div className="flex justify-between items-center pt-4 border-t border-slate-50">
+                                                            <div className="flex gap-4">
+                                                                <div className="bg-indigo-50 px-3 py-1 rounded-full text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Total: {pCor * nC} pares</div>
+                                                                <div className="bg-emerald-50 px-3 py-1 rounded-full text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Subtotal: R$ {(pCor * nC * m.valorUnitario).toLocaleString('pt-BR')}</div>
+                                                            </div>
+                                                            <div className="flex gap-2">
+                                                                <button onClick={() => {
+                                                                    const updated = [...modelos, {...m, id: Math.random().toString(36).substr(2,9)}];
+                                                                    setModelos(updated); handleSave(cliente, updated);
+                                                                }} className="p-2 hover:bg-slate-50 text-slate-300 hover:text-indigo-600 transition-all"><Icon name="copy" className="w-4 h-4" /></button>
+                                                                <button onClick={() => {
+                                                                    const updated = modelos.filter(mod => mod.id !== m.id);
+                                                                    setModelos(updated); handleSave(cliente, updated);
+                                                                }} className="p-2 hover:bg-rose-50 text-slate-300 hover:text-rose-600 transition-all"><Icon name="trash" className="w-4 h-4" /></button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </div>
+                    </main>
+
+                    {/* Menu Flutuante de Ações PDF */}
+                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-xl border border-slate-200 px-6 py-4 rounded-[2rem] shadow-2xl flex items-center gap-6 z-[100]">
+                        <div className="hidden md:block">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Documentos</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button onClick={() => window.print()} className="flex items-center gap-2 bg-slate-800 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-black transition-all">
+                                <Icon name="download" className="w-4 h-4" /> PDF Cliente
+                            </button>
+                            <button onClick={() => window.print()} className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+                                <Icon name="package" className="w-4 h-4" /> PDF Produção
+                            </button>
+                        </div>
                     </div>
 
-                    {/* Conteúdo */}
-                    <div className="flex-1 p-6 space-y-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 mr-4">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Cores (separadas por vírgula)</label>
-                          <input 
-                            type="text" 
-                            placeholder="Ex: Preto, Vermelho, Nude"
-                            value={m.cores}
-                            onChange={(e) => updateModelo(m.id, 'cores', e.target.value)}
-                            className="w-full mt-1 bg-transparent border-b border-slate-200 py-1 outline-none focus:border-indigo-500 font-bold transition-all"
-                          />
+                    {/* Toast de Notificação Simples */}
+                    {notification && (
+                        <div className={`fixed top-6 right-6 z-[110] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce ${notification.type === 'success' ? 'bg-indigo-600' : 'bg-rose-600'} text-white`}>
+                            <Icon name="package" />
+                            <span className="font-bold text-sm tracking-tight">{notification.msg}</span>
                         </div>
-                        <div className="text-right">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Preço Unit.</label>
-                          <div className="flex items-center gap-1 mt-1 justify-end">
-                            <span className="font-bold text-slate-400">R$</span>
-                            <input 
-                              type="number" 
-                              value={m.valorUnitario}
-                              onChange={(e) => updateModelo(m.id, 'valorUnitario', e.target.value)}
-                              className="w-20 text-right outline-none font-black text-lg focus:text-indigo-600 transition-all"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-7 gap-2 pt-2">
-                        {Object.keys(m.grade).map(size => (
-                          <div key={size} className="flex flex-col items-center">
-                            <span className="text-[10px] font-bold text-slate-400">{size}</span>
-                            <input 
-                              type="number" 
-                              value={m.grade[size]}
-                              onChange={(e) => updateGradeModelo(m.id, size, e.target.value)}
-                              className="w-full text-center py-2 bg-slate-50 rounded-xl border border-transparent hover:border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none font-bold transition-all"
-                            />
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                        <div className="flex gap-4">
-                          <div className="text-xs">
-                            <span className="text-slate-400 font-medium">Pares/Cor: </span>
-                            <span className="font-bold text-slate-700">{calcularTotalPares(m).paresPorCor}</span>
-                          </div>
-                          <div className="text-xs">
-                            <span className="text-slate-400 font-medium">Subtotal Modelo: </span>
-                            <span className="font-bold text-indigo-600">R$ {(calcularTotalPares(m).total * m.valorUnitario).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => cloneModelo(m)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Clonar Item">
-                            <Copy className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => removeModelo(m.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Excluir Item">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    )}
                 </div>
-              ))
-            )}
-          </div>
+            );
+        }
 
-          <div className="flex gap-4">
-            <button 
-              onClick={() => handleGerarPDF('cliente')}
-              className="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 py-4 rounded-3xl font-black text-lg shadow-sm flex items-center justify-center gap-3 transition-all active:scale-95"
-            >
-              <Download className="w-6 h-6 text-indigo-600" /> PDF Cliente
-            </button>
-            <button 
-              onClick={() => handleGerarPDF('producao')}
-              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-3xl font-black text-lg shadow-lg shadow-indigo-200 flex items-center justify-center gap-3 transition-all active:scale-95"
-            >
-              <Package className="w-6 h-6" /> PDF Produção
-            </button>
-          </div>
-        </div>
-      </main>
-
-      <footer className="text-center py-10 opacity-30 text-xs font-bold uppercase tracking-[0.3em]">
-        © {new Date().getFullYear()} OrderSystem Pro — Powered by Gemini 2.5
-      </footer>
-    </div>
-  );
-}
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
