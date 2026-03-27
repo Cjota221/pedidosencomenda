@@ -32,6 +32,7 @@
             background: white;
             padding: 40px;
             color: black;
+            z-index: -1;
         }
 
         #pdf-loader {
@@ -75,7 +76,7 @@
                         <h1 class="text-lg font-black tracking-tighter">OrderSystem <span class="text-indigo-600">PRO</span></h1>
                         <div class="flex items-center gap-1.5">
                             <div id="sync-indicator" class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                            <span id="sync-text" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">A aguardar nuvem...</span>
+                            <span id="sync-text" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Modo Local</span>
                         </div>
                     </div>
                 </div>
@@ -110,37 +111,37 @@
                             <img id="logo-img" class="hidden w-full h-full object-contain" />
                             <input type="file" id="input-logo" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
                         </div>
-                        <p class="text-[10px] text-slate-400 leading-tight italic">Clique no ícone para carregar a logomarca da cliente.</p>
+                        <p class="text-[10px] text-slate-400 leading-tight italic">Logomarca da cliente.</p>
                     </div>
 
                     <div class="space-y-3">
                         <div>
                             <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Nome Completo</label>
-                            <input type="text" id="cliente-nome" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm transition-all" />
+                            <input type="text" id="cliente-nome" oninput="window.upCli('nome', this.value)" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm transition-all" />
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">WhatsApp</label>
-                                <input type="text" id="cliente-telefone" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" />
+                                <input type="text" id="cliente-telefone" oninput="window.upCli('telefone', this.value)" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" />
                             </div>
                             <div>
                                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">CNPJ</label>
-                                <input type="text" id="cliente-cnpj" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" />
+                                <input type="text" id="cliente-cnpj" oninput="window.upCli('cnpj', this.value)" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" />
                             </div>
                         </div>
                         <div class="flex items-end gap-2">
                             <div class="flex-1">
                                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">CEP</label>
-                                <input type="text" id="cliente-cep" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" />
+                                <input type="text" id="cliente-cep" oninput="window.upCli('cep', this.value)" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" />
                             </div>
-                            <button id="btn-buscar-cep" class="p-2.5 bg-indigo-50 rounded-xl hover:bg-indigo-100 text-indigo-600 transition-colors">
+                            <button id="btn-buscar-cep" onclick="window.buscarCep()" class="p-2.5 bg-indigo-50 rounded-xl hover:bg-indigo-100 text-indigo-600 transition-colors">
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                             </button>
                         </div>
-                        <input type="text" id="cliente-endereco" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm" placeholder="Endereço" />
+                        <input type="text" id="cliente-endereco" oninput="window.upCli('endereco', this.value)" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm" placeholder="Endereço" />
                         <div class="grid grid-cols-2 gap-3">
-                            <input type="text" id="cliente-cidade" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="Cidade" />
-                            <input type="text" id="cliente-estado" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="Estado" />
+                            <input type="text" id="cliente-cidade" oninput="window.upCli('cidade', this.value)" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="Cidade" />
+                            <input type="text" id="cliente-estado" oninput="window.upCli('estado', this.value)" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm" placeholder="Estado" />
                         </div>
                     </div>
                 </section>
@@ -154,21 +155,21 @@
                         <div class="flex justify-between text-xs text-slate-400"><span>Produtos</span><span id="valor-mercadoria">R$ 0,00</span></div>
                         <div class="flex flex-col gap-1">
                             <label class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Frete (+)</label>
-                            <input type="number" id="input-frete" value="0" class="bg-slate-800 border-none rounded-xl p-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500" />
+                            <input type="number" id="input-frete" oninput="window.upConf('frete', this.value)" value="0" class="bg-slate-800 border-none rounded-xl p-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500" />
                         </div>
                         <div class="flex flex-col gap-1">
                             <label class="text-[9px] font-bold text-rose-400 uppercase tracking-widest">Desconto (-)</label>
-                            <input type="number" id="input-desconto" value="0" class="bg-slate-800 border-none rounded-xl p-2 text-sm outline-none focus:ring-1 focus:ring-rose-500" />
+                            <input type="number" id="input-desconto" oninput="window.upConf('desconto', this.value)" value="0" class="bg-slate-800 border-none rounded-xl p-2 text-sm outline-none focus:ring-1 focus:ring-rose-500" />
                         </div>
                         <div class="pt-2">
-                            <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Prazo de Entrega Estimado</label>
-                            <p id="display-prazo" class="text-xs font-bold text-indigo-300 mt-1">Calculando...</p>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Prazo Estimado</label>
+                            <p id="display-prazo" class="text-xs font-bold text-indigo-300 mt-1">...</p>
                         </div>
                         <div class="pt-4 border-t border-slate-800 flex justify-between items-center">
                             <span class="font-bold text-sm tracking-wider uppercase">Valor Total</span>
                             <span id="valor-final" class="text-2xl font-black text-indigo-400">R$ 0,00</span>
                         </div>
-                        <button id="btn-finalizar-pedido" class="w-full py-3 mt-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-lg active:scale-95">
+                        <button onclick="window.finalizarPedido()" class="w-full py-3 mt-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-lg active:scale-95">
                             Finalizar e Arquivar
                         </button>
                     </div>
@@ -179,48 +180,37 @@
             <div class="lg:col-span-8 space-y-6">
                 <div class="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200">
                     <div>
-                        <h2 class="text-xl font-black">Itens do Pedido</h2>
-                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Criação de Modelos</p>
+                        <h2 class="text-xl font-black text-slate-800">Produtos do Pedido</h2>
                     </div>
                     <div class="flex gap-2">
-                        <button id="btn-add-modelo" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95 text-sm">
+                        <button onclick="window.addMod()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95 text-sm">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Novo
                         </button>
                         <label class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-5 py-3 rounded-2xl font-bold transition-all cursor-pointer text-sm">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg> Lote
-                            <input type="file" id="input-lote" multiple style="display:none" accept="image/*" />
+                            <input type="file" id="input-lote" onchange="window.importLote(this)" multiple style="display:none" accept="image/*" />
                         </label>
                     </div>
                 </div>
 
-                <div id="modelos-lista" class="space-y-4">
-                    <!-- Modelos inseridos via JS -->
-                </div>
+                <div id="modelos-lista" class="space-y-4"></div>
             </div>
         </main>
 
         <!-- Histórico -->
         <section class="max-w-7xl mx-auto px-4 py-12 border-t border-slate-200">
-            <div class="flex items-center gap-3 mb-6">
-                <h2 class="text-xl font-black">Histórico de Pedidos</h2>
-            </div>
+            <h2 class="text-xl font-black mb-6">Histórico</h2>
             <div id="historico-lista" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </section>
 
         <!-- Menu PDF Flutuante -->
-        <div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md border border-slate-200 px-6 py-4 rounded-[2rem] shadow-2xl flex items-center gap-6 z-[100]">
-            <div class="hidden md:block pr-6 border-r border-slate-200">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Documentação</p>
-                <p class="text-[8px] text-slate-300 font-bold mt-1 uppercase">OrderSystem PRO</p>
-            </div>
-            <div class="flex gap-3">
-                <button onclick="window.gerarPDFDocumento('cliente')" class="flex items-center gap-2 bg-slate-800 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-black transition-all">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Gerar PDF Cliente
-                </button>
-                <button onclick="window.gerarPDFDocumento('producao')" class="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 9.4 7.55 4.24M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.29 7l8.71 5 8.71-5"/></svg> Gerar Ordem Produção
-                </button>
-            </div>
+        <div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md border border-slate-200 px-6 py-4 rounded-[2rem] shadow-2xl flex items-center gap-3 z-[100]">
+            <button onclick="window.gerarPDFDocumento('cliente')" class="flex items-center gap-2 bg-slate-800 text-white px-6 py-3 rounded-2xl text-xs font-bold hover:bg-black transition-all">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Gerar PDF Cliente
+            </button>
+            <button onclick="window.gerarPDFDocumento('producao')" class="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 9.4 7.55 4.24M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.29 7l8.71 5 8.71-5"/></svg> Gerar Ordem Produção
+            </button>
         </div>
     </div>
 
@@ -228,18 +218,27 @@
     <div id="toast-container" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[110]"></div>
 
     <script>
-        // Configuração Inicial
+        // --- 1. ESTADO GLOBAL ---
         window.appState = {
-            cliente: { nome: '', telefone: '', cnpj: '', cep: '', endereco: '', bairro: '', cidade: '', estado: '', logo: '' },
+            cliente: { nome: '', telefone: '', cnpj: '', cep: '', endereco: '', cidade: '', estado: '', logo: '' },
             modelos: [],
             config: { desconto: 0, frete: 0, gradePadrao: { '34': 0, '35': 0, '36': 0, '37': 0, '38': 0, '39': 0, '40': 0 } },
             prazoEntrega: '',
             historico: []
         };
 
-        function calcularPrazoEntrega() {
+        // --- 2. LOGICA DE INTERFACE ---
+        window.showToast = (msg, type = "success") => {
+            const t = document.createElement('div');
+            t.className = `px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 toast-animate mb-4 ${type === 'success' ? 'bg-indigo-600' : 'bg-rose-600'} text-white`;
+            t.innerHTML = `<span class="font-bold text-sm">${msg}</span>`;
+            document.getElementById('toast-container').appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        };
+
+        window.calculatePrazo = () => {
             const dataAtual = new Date();
-            function addDiasUteis(data, dias) {
+            const addDiasUteis = (data, dias) => {
                 let d = new Date(data.getTime());
                 let count = 0;
                 while (count < dias) {
@@ -247,104 +246,13 @@
                     if (d.getDay() !== 0 && d.getDay() !== 6) count++;
                 }
                 return d;
-            }
-            const dataMin = addDiasUteis(dataAtual, 15);
-            const dataMax = addDiasUteis(dataAtual, 20);
+            };
+            const d1 = addDiasUteis(dataAtual, 15);
+            const d2 = addDiasUteis(dataAtual, 20);
             const format = (d) => d.toLocaleDateString('pt-BR');
-            const str = `De ${format(dataMin)} até ${format(dataMax)}`;
-            window.appState.prazoEntrega = str;
+            window.appState.prazoEntrega = `De ${format(d1)} até ${format(d2)}`;
             const el = document.getElementById('display-prazo');
-            if (el) el.innerText = str + " (15-20 dias úteis)";
-        }
-        calcularPrazoEntrega();
-
-        window.saveToCloud = () => {};
-        window.finalizarPedido = () => {};
-        window.eliminarDoHistorico = () => {};
-    </script>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'order-system-pro';
-
-        if (configStr) {
-            const config = JSON.parse(configStr);
-            const app = initializeApp(config);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-
-            onAuthStateChanged(auth, async (u) => {
-                if (u) {
-                    const ind = document.getElementById('sync-indicator');
-                    const txt = document.getElementById('sync-text');
-                    if (ind) ind.className = "w-1.5 h-1.5 rounded-full bg-green-500";
-                    if (txt) txt.innerText = "Sincronizado";
-
-                    onSnapshot(doc(db, 'artifacts', appId, 'users', u.uid, 'currentOrder', 'main'), (ds) => {
-                        if (ds.exists()) {
-                            const d = ds.data();
-                            window.appState.cliente = d.cliente || window.appState.cliente;
-                            window.appState.modelos = d.modelos || [];
-                            window.appState.config = d.config || window.appState.config;
-                            window.updateUIFromState();
-                        }
-                    });
-
-                    onSnapshot(collection(db, 'artifacts', appId, 'users', u.uid, 'pedidos'), (qs) => {
-                        const ped = []; qs.forEach(d => ped.push({ id: d.id, ...d.data() }));
-                        window.appState.historico = ped.sort((a, b) => new Date(b.dataFinalizado) - new Date(a.dataFinalizado));
-                        window.renderHistorico();
-                    });
-                } else {
-                    if (typeof __initial_auth_token !== 'undefined') await signInWithCustomToken(auth, __initial_auth_token);
-                    else await signInAnonymously(auth);
-                }
-            });
-
-            window.saveToCloud = async () => {
-                if (!auth.currentUser) return;
-                try {
-                    await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'currentOrder', 'main'), {
-                        cliente: window.appState.cliente, modelos: window.appState.modelos, config: window.appState.config, lastUpdated: new Date().toISOString()
-                    });
-                } catch (e) { console.error(e); }
-            };
-
-            window.finalizarPedido = async () => {
-                if (window.appState.modelos.length === 0) return alert("Adicione itens!");
-                if (!confirm("Deseja arquivar este pedido? O rascunho será limpo.")) return;
-                try {
-                    const data = { ...window.appState, dataFinalizado: new Date().toISOString() };
-                    delete data.historico;
-                    await addDoc(collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'pedidos'), data);
-                    await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'currentOrder', 'main'), {
-                        cliente: { nome: '', telefone: '', cnpj: '', cep: '', endereco: '', bairro: '', cidade: '', estado: '', logo: window.appState.cliente.logo },
-                        modelos: [], config: { desconto: 0, frete: 0, gradePadrao: { '34': 0, '35': 0, '36': 0, '37': 0, '38': 0, '39': 0, '40': 0 } }
-                    });
-                    window.showToast("Pedido Finalizado!");
-                } catch (e) { console.error(e); }
-            };
-
-            window.eliminarDoHistorico = async (id) => {
-                if (confirm("Apagar do histórico?")) await deleteDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'pedidos', id));
-            };
-        }
-    </script>
-
-    <script>
-        const elLista = document.getElementById('modelos-lista');
-        const elHist = document.getElementById('historico-lista');
-        
-        window.showToast = (msg, type = "success") => {
-            const t = document.createElement('div');
-            t.className = `px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 toast-animate mb-4 ${type === 'success' ? 'bg-indigo-600' : 'bg-rose-600'} text-white`;
-            t.innerHTML = `<span class="font-bold text-sm">${msg}</span>`;
-            document.getElementById('toast-container').appendChild(t);
-            setTimeout(() => t.remove(), 3000);
+            if (el) el.innerText = window.appState.prazoEntrega + " (15-20 dias úteis)";
         };
 
         window.calculateTotals = () => {
@@ -363,6 +271,80 @@
             document.getElementById('valor-final').innerText = `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
         };
 
+        window.renderModelos = () => {
+            const el = document.getElementById('modelos-lista');
+            el.innerHTML = '';
+            if (window.appState.modelos.length === 0) {
+                el.innerHTML = `<div class="py-12 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest border-2 border-dashed border-slate-200 rounded-3xl">Nenhum modelo adicionado</div>`;
+                return;
+            }
+            window.appState.modelos.forEach(m => {
+                const pc = Object.values(m.grade).reduce((a, b) => a + (parseInt(b) || 0), 0);
+                const nc = m.cores.split(',').filter(c => c.trim()).length || 1;
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-3xl border border-slate-200 shadow-sm p-4 flex flex-col md:flex-row gap-6";
+                card.innerHTML = `
+                    <div class="w-full md:w-32 h-32 bg-slate-50 rounded-2xl relative overflow-hidden shrink-0 border border-slate-100">
+                        <img src="${m.foto}" class="w-full h-full object-cover" />
+                        <input type="file" class="absolute inset-0 opacity-0 cursor-pointer" onchange="window.upFoto('${m.id}', this)" />
+                    </div>
+                    <div class="flex-1 space-y-4">
+                        <div class="flex justify-between items-start gap-4">
+                            <div class="flex-1 border-b border-slate-100"><span class="text-[9px] font-bold text-slate-400 uppercase">Cores</span>
+                                <input type="text" value="${m.cores}" oninput="window.upMod('${m.id}', 'cores', this.value)" class="w-full font-bold outline-none text-sm py-1 bg-transparent" />
+                            </div>
+                            <div class="text-right border-b border-slate-100"><span class="text-[9px] font-bold text-slate-400 uppercase">Preço Unit.</span>
+                                <input type="number" value="${m.valorUnitario}" oninput="window.upMod('${m.id}', 'valorUnitario', this.value)" class="w-20 text-right font-black outline-none py-1 bg-transparent" />
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-7 gap-2">
+                            ${Object.keys(m.grade).map(s => `<div class="text-center"><span class="text-[9px] font-bold text-slate-400">${s}</span><input type="number" value="${m.grade[s]}" oninput="window.upGrade('${m.id}', '${s}', this.value)" class="w-full text-center bg-slate-50 rounded-lg p-1 text-xs font-bold" /></div>`).join('')}
+                        </div>
+                        <div class="flex justify-between items-center pt-2 border-t border-slate-50">
+                            <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">${pc * nc} pares</span>
+                            <div class="flex gap-2">
+                                <button onclick="window.clone('${m.id}')" class="p-1.5 text-slate-300 hover:text-indigo-600 transition-colors"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+                                <button onclick="window.del('${m.id}')" class="p-1.5 text-slate-300 hover:text-rose-600 transition-colors"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                el.appendChild(card);
+            });
+        };
+
+        window.renderHistorico = () => {
+            const el = document.getElementById('historico-lista');
+            el.innerHTML = '';
+            if (window.appState.historico.length === 0) {
+                el.innerHTML = `<p class="col-span-full text-center text-slate-400 py-4 font-bold uppercase text-[10px]">Histórico Vazio</p>`;
+                return;
+            }
+            window.appState.historico.forEach(p => {
+                const d = new Date(p.dataFinalizado).toLocaleDateString('pt-BR');
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-2xl border border-slate-200 flex justify-between items-center shadow-sm";
+                card.innerHTML = `<div class="truncate mr-4"><p class="font-black text-xs uppercase truncate">${p.cliente.nome || '---'}</p><p class="text-[9px] text-slate-400 font-bold">${d}</p></div>
+                                 <div class="flex gap-2 shrink-0"><button onclick="window.verHist('${p.id}')" class="bg-indigo-50 text-indigo-600 p-2 rounded-lg hover:bg-indigo-100 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>
+                                 <button onclick="window.eliminarDoHistorico('${p.id}')" class="text-slate-200 hover:text-rose-500 p-2 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button></div>`;
+                el.appendChild(card);
+            });
+        };
+
+        // --- 3. HANDLERS DE DADOS ---
+        window.upCli = (f, v) => { window.appState.cliente[f] = v; window.saveToCloud(); };
+        window.upConf = (f, v) => { window.appState.config[f] = parseFloat(v) || 0; window.calculateTotals(); window.saveToCloud(); };
+        window.upMod = (id, f, v) => { const m = window.appState.modelos.find(x => x.id === id); if(m) m[f] = v; window.calculateTotals(); window.saveToCloud(); };
+        window.upGrade = (id, s, v) => { const m = window.appState.modelos.find(x => x.id === id); if(m) m.grade[s] = parseInt(v) || 0; window.calculateTotals(); window.saveToCloud(); };
+        window.upFoto = (id, i) => { const r = new FileReader(); r.onload = e => { const m = window.appState.modelos.find(x => x.id === id); if(m) m.foto = e.target.result; window.renderModelos(); window.saveToCloud(); }; if(i.files[0]) r.readAsDataURL(i.files[0]); };
+        window.del = id => { window.appState.modelos = window.appState.modelos.filter(x => x.id !== id); window.renderModelos(); window.calculateTotals(); window.saveToCloud(); };
+        window.clone = id => { const m = JSON.parse(JSON.stringify(window.appState.modelos.find(x => x.id === id))); m.id = Math.random().toString(36).substr(2,9); window.appState.modelos.push(m); window.renderModelos(); window.calculateTotals(); window.saveToCloud(); };
+        window.addMod = () => { window.appState.modelos.push({ id: Math.random().toString(36).substr(2,9), foto: 'https://placehold.co/300x300/e2e8f0/6366f1?text=Foto', cores: '', valorUnitario: 0, grade: {...window.appState.config.gradePadrao} }); window.renderModelos(); window.calculateTotals(); window.saveToCloud(); };
+        window.importLote = (inp) => { const files = Array.from(inp.files); files.forEach((f, idx) => { const r = new FileReader(); r.onload = e => { window.appState.modelos.push({ id: Math.random().toString(36).substr(2,9), foto: e.target.result, cores: '', valorUnitario: 0, grade: {...window.appState.config.gradePadrao} }); if(idx === files.length-1) { window.renderModelos(); window.calculateTotals(); window.saveToCloud(); } }; r.readAsDataURL(f); }); };
+        window.buscarCep = async () => { const cep = document.getElementById('cliente-cep').value.replace(/\D/g,''); if(cep.length===8) { try { const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`); const data = await res.json(); if(!data.erro) { document.getElementById('cliente-endereco').value = data.logradouro; document.getElementById('cliente-cidade').value = data.localidade; document.getElementById('cliente-estado').value = data.uf; window.upCli('endereco', data.logradouro); window.upCli('cidade', data.localidade); window.upCli('estado', data.uf); } } catch(e) {} } };
+
+        document.getElementById('input-logo').onchange = (e) => { const r = new FileReader(); r.onload = ev => { document.getElementById('logo-img').src = ev.target.result; document.getElementById('logo-img').classList.remove('hidden'); document.getElementById('logo-placeholder').classList.add('hidden'); window.upCli('logo', ev.target.result); }; if(e.target.files[0]) r.readAsDataURL(e.target.files[0]); };
+
         window.updateUIFromState = () => {
             const { cliente, config } = window.appState;
             document.getElementById('cliente-nome').value = cliente.nome || '';
@@ -375,104 +357,34 @@
             if (cliente.logo) { document.getElementById('logo-img').src = cliente.logo; document.getElementById('logo-img').classList.remove('hidden'); document.getElementById('logo-placeholder').classList.add('hidden'); }
             document.getElementById('input-frete').value = config.frete || 0;
             document.getElementById('input-desconto').value = config.desconto || 0;
-            window.renderModelos(); window.calculateTotals();
+            window.renderModelos(); window.calculateTotals(); window.calculatePrazo();
         };
 
-        window.renderModelos = () => {
-            elLista.innerHTML = '';
-            if (window.appState.modelos.length === 0) {
-                elLista.innerHTML = `<div class="py-12 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest border-2 border-dashed border-slate-200 rounded-3xl">Nenhum modelo</div>`;
-                return;
-            }
-            window.appState.modelos.forEach((m, i) => {
-                const pc = Object.values(m.grade).reduce((a, b) => a + (parseInt(b) || 0), 0);
-                const nc = m.cores.split(',').filter(c => c.trim()).length || 1;
-                const card = document.createElement('div');
-                card.className = "bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm p-4 flex flex-col md:flex-row gap-6";
-                card.innerHTML = `
-                    <div class="w-full md:w-40 h-40 bg-slate-50 rounded-2xl relative overflow-hidden shrink-0">
-                        <img src="${m.foto}" class="w-full h-full object-cover" />
-                        <input type="file" class="absolute inset-0 opacity-0 cursor-pointer" onchange="window.updateFoto('${m.id}', this)" />
-                    </div>
-                    <div class="flex-1 space-y-4">
-                        <div class="flex justify-between items-start">
-                            <input type="text" value="${m.cores}" oninput="window.upMod('${m.id}', 'cores', this.value)" class="font-bold border-b border-slate-100 outline-none w-full mr-4" placeholder="Cores separadas por vírgula" />
-                            <div class="text-right">
-                                <span class="text-[9px] font-bold text-slate-400 block">PREÇO UNIT.</span>
-                                <input type="number" value="${m.valorUnitario}" oninput="window.upMod('${m.id}', 'valorUnitario', this.value)" class="w-20 text-right font-black outline-none" />
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-7 gap-2">
-                            ${Object.keys(m.grade).map(s => `<div class="text-center"><span class="text-[9px] font-bold text-slate-400">${s}</span><input type="number" value="${m.grade[s]}" oninput="window.upGrade('${m.id}', '${s}', this.value)" class="w-full text-center bg-slate-50 rounded-lg p-1 text-sm font-bold" /></div>`).join('')}
-                        </div>
-                        <div class="flex justify-between items-center pt-2 border-t border-slate-50">
-                            <span class="text-[10px] font-bold text-indigo-600 uppercase">${pc * nc} pares totais</span>
-                            <div class="flex gap-2">
-                                <button onclick="window.clone('${m.id}')" class="p-2 text-slate-300 hover:text-indigo-600 transition-colors"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
-                                <button onclick="window.del('${m.id}')" class="p-2 text-slate-300 hover:text-rose-600 transition-colors"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                elLista.appendChild(card);
-            });
-        };
-
-        window.renderHistorico = () => {
-            elHist.innerHTML = '';
-            window.appState.historico.forEach(p => {
-                const d = new Date(p.dataFinalizado).toLocaleDateString('pt-BR');
-                const div = document.createElement('div');
-                div.className = "bg-white p-4 rounded-2xl border border-slate-200 flex justify-between items-center";
-                div.innerHTML = `<div class="truncate mr-4"><p class="font-black text-xs uppercase truncate">${p.cliente.nome || 'Sem nome'}</p><p class="text-[9px] text-slate-400 font-bold">${d}</p></div>
-                                 <div class="flex gap-2 shrink-0"><button onclick="window.verHist('${p.id}')" class="bg-indigo-50 text-indigo-600 p-2 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>
-                                 <button onclick="window.eliminarDoHistorico('${p.id}')" class="text-slate-300 hover:text-rose-600 p-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button></div>`;
-                elHist.appendChild(div);
-            });
-        };
-
-        // Handlers
-        window.upMod = (id, f, v) => { const m = window.appState.modelos.find(x => x.id === id); if(m) m[f] = v; window.calculateTotals(); window.saveToCloud(); };
-        window.upGrade = (id, s, v) => { const m = window.appState.modelos.find(x => x.id === id); if(m) m.grade[s] = parseInt(v) || 0; window.calculateTotals(); window.saveToCloud(); };
-        window.updateFoto = (id, i) => { const r = new FileReader(); r.onload = e => { window.appState.modelos.find(x => x.id === id).foto = e.target.result; window.renderModelos(); window.saveToCloud(); }; r.readAsDataURL(i.files[0]); };
-        window.del = id => { window.appState.modelos = window.appState.modelos.filter(x => x.id !== id); window.renderModelos(); window.calculateTotals(); window.saveToCloud(); };
-        window.clone = id => { const m = JSON.parse(JSON.stringify(window.appState.modelos.find(x => x.id === id))); m.id = Math.random().toString(36).substr(2,9); window.appState.modelos.push(m); window.renderModelos(); window.calculateTotals(); window.saveToCloud(); };
-        
-        document.getElementById('btn-add-modelo').onclick = () => { 
-            window.appState.modelos.push({ id: Math.random().toString(36).substr(2,9), foto: 'https://placehold.co/300x300/e2e8f0/6366f1?text=Novo', cores: '', valorUnitario: 0, grade: {...window.appState.config.gradePadrao} });
-            window.renderModelos(); window.calculateTotals(); window.saveToCloud();
-        };
-
-        document.getElementById('btn-finalizar-pedido').onclick = () => window.finalizarPedido();
-
-        // GERAÇÃO DE PDF PROFISSIONAL (CORRIGIDA)
+        // --- 4. GERAÇÃO DE PDF PROFISSIONAL ---
         window.gerarPDFDocumento = async (tipo) => {
             const loader = document.getElementById('pdf-loader');
             loader.style.display = 'flex';
-            
             const area = document.getElementById('pdf-render-area');
             const data = window.appState;
             const hoje = new Date().toLocaleDateString('pt-BR');
 
-            // Montar Tabela de Produtos
             let rows = data.modelos.map((m, i) => {
                 const pc = Object.values(m.grade).reduce((a, b) => a + b, 0);
                 const nc = m.cores.split(',').filter(c => c.trim()).length || 1;
                 const total = pc * nc;
                 const sub = total * m.valorUnitario;
                 const gradeStr = Object.entries(m.grade).filter(([_, v]) => v > 0).map(([k, v]) => `${k}:${v}`).join(' ');
-                
                 return `
                 <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 10px 0;"><img src="${m.foto}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px;"></td>
-                    <td style="padding: 10px 0; font-size: 11px;">
-                        <div style="font-weight: 800;">ITEM #${i+1}</div>
-                        <div style="color: #666;">Cores: ${m.cores}</div>
-                        <div style="background: #f8fafc; padding: 2px 5px; display: inline-block; margin-top: 4px; font-weight: bold;">${gradeStr}</div>
+                    <td style="padding: 12px 0;"><img src="${m.foto}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid #eee;"></td>
+                    <td style="padding: 12px 0; font-size: 11px; line-height: 1.4;">
+                        <div style="font-weight: 900; color: #1e293b;">ITEM #${i+1}</div>
+                        <div style="color: #64748b;">Cores: ${m.cores || '---'}</div>
+                        <div style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; font-weight: 700; color: #475569; font-size: 9px;">${gradeStr}</div>
                     </td>
-                    <td style="padding: 10px 0; text-align: center; font-weight: bold;">${total}</td>
-                    <td style="padding: 10px 0; text-align: right;">R$ ${parseFloat(m.valorUnitario).toFixed(2)}</td>
-                    <td style="padding: 10px 0; text-align: right; font-weight: 800;">R$ ${sub.toFixed(2)}</td>
+                    <td style="padding: 12px 0; text-align: center; font-weight: 800; color: #1e293b;">${total}</td>
+                    <td style="padding: 12px 0; text-align: right; color: #64748b; font-size: 11px;">${parseFloat(m.valorUnitario).toFixed(2)}</td>
+                    <td style="padding: 12px 0; text-align: right; font-weight: 900; color: #1e293b;">${sub.toFixed(2)}</td>
                 </tr>`;
             }).join('');
 
@@ -480,89 +392,156 @@
                 const total = Object.values(m.grade).reduce((a, b) => a + b, 0) * (m.cores.split(',').filter(c => c.trim()).length || 1);
                 acc.v += total * m.valorUnitario; acc.p += total; return acc;
             }, {v:0, p:0});
-            
             const totalFinal = totals.v + parseFloat(data.config.frete) - parseFloat(data.config.desconto);
 
-            // Template do Documento
             area.innerHTML = `
-                <div style="padding: 20px; font-family: 'Inter', sans-serif;">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 30px;">
+                <div style="padding: 10px; color: #1e293b;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px;">
                         <div>
-                            <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #4f46e5;">${tipo === 'cliente' ? 'PEDIDO DE COMPRA' : 'ORDEM DE PRODUÇÃO'}</h1>
-                            <p style="margin: 5px 0; font-size: 12px; color: #666;">Data do Pedido: ${hoje}</p>
+                            <h1 style="margin: 0; font-size: 28px; font-weight: 900; color: #4f46e5; letter-spacing: -1px;">${tipo === 'cliente' ? 'PEDIDO' : 'PRODUÇÃO'}</h1>
+                            <p style="margin: 4px 0; font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Emitido em: ${hoje}</p>
                         </div>
-                        ${data.cliente.logo ? `<img src="${data.cliente.logo}" style="max-height: 60px; max-width: 150px;">` : ''}
+                        ${data.cliente.logo ? `<img src="${data.cliente.logo}" style="max-height: 50px; max-width: 140px; object-fit: contain;">` : ''}
                     </div>
 
-                    <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 30px; display: grid; grid-template-cols: 1fr 1fr; gap: 20px;">
-                        <div>
-                            <p style="margin: 0; font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Dados da Cliente</p>
-                            <p style="margin: 5px 0; font-size: 14px; font-weight: 800;">${data.cliente.nome || 'NÃO INFORMADO'}</p>
-                            <p style="margin: 0; font-size: 12px; color: #64748b;">${data.cliente.endereco}, ${data.cliente.cidade} - ${data.cliente.estado}</p>
-                            <p style="margin: 2px 0; font-size: 12px; color: #64748b;">Tel: ${data.cliente.telefone} | CNPJ: ${data.cliente.cnpj || '---'}</p>
+                    <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; margin-bottom: 40px;">
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 16px; border: 1px solid #f1f5f9;">
+                            <p style="margin: 0 0 8px 0; font-size: 9px; font-weight: 900; color: #6366f1; text-transform: uppercase; letter-spacing: 1px;">Destinatário</p>
+                            <p style="margin: 0; font-size: 15px; font-weight: 900; color: #0f172a;">${data.cliente.nome || 'CLIENTE NÃO IDENTIFICADO'}</p>
+                            <p style="margin: 4px 0; font-size: 11px; color: #64748b; line-height: 1.4;">${data.cliente.endereco || 'Endereço não informado'}<br>${data.cliente.cidade || ''} - ${data.cliente.estado || ''}</p>
+                            <p style="margin: 8px 0 0 0; font-size: 11px; font-weight: 700; color: #334155;">WhatsApp: ${data.cliente.telefone || '---'}</p>
                         </div>
-                        <div style="text-align: right;">
-                            <p style="margin: 0; font-size: 9px; font-weight: 800; color: #4f46e5; text-transform: uppercase;">Prazo de Entrega</p>
-                            <p style="margin: 5px 0; font-size: 16px; font-weight: 900; color: #1e293b;">${data.prazoEntrega}</p>
-                            <p style="margin: 0; font-size: 10px; color: #64748b;">(Estimativa de 15 a 20 dias úteis)</p>
+                        <div style="text-align: right; background: #4f46e5; color: white; padding: 20px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2);">
+                            <p style="margin: 0 0 8px 0; font-size: 9px; font-weight: 900; text-transform: uppercase; opacity: 0.8;">Previsão de Entrega</p>
+                            <p style="margin: 0; font-size: 17px; font-weight: 900;">${data.prazoEntrega}</p>
+                            <p style="margin: 4px 0 0 0; font-size: 10px; font-weight: 600; opacity: 0.9;">Estimativa de 15 a 20 dias úteis</p>
                         </div>
                     </div>
 
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
                         <thead>
-                            <tr style="border-bottom: 2px solid #000; text-align: left; font-size: 10px; text-transform: uppercase; color: #94a3b8;">
-                                <th style="padding-bottom: 10px;">Ref.</th>
-                                <th style="padding-bottom: 10px;">Descrição e Grade</th>
-                                <th style="padding-bottom: 10px; text-align: center;">Qtd</th>
-                                <th style="padding-bottom: 10px; text-align: right;">Unit.</th>
-                                <th style="padding-bottom: 10px; text-align: right;">Subtotal</th>
+                            <tr style="border-bottom: 2px solid #e2e8f0; text-align: left; font-size: 10px; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">
+                                <th style="padding-bottom: 12px; width: 60px;">Foto</th>
+                                <th style="padding-bottom: 12px;">Descrição</th>
+                                <th style="padding-bottom: 12px; text-align: center;">Qtd</th>
+                                <th style="padding-bottom: 12px; text-align: right;">Preço</th>
+                                <th style="padding-bottom: 12px; text-align: right;">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>${rows}</tbody>
                     </table>
 
                     <div style="display: flex; justify-content: flex-end;">
-                        <div style="width: 250px; background: #1e293b; color: white; padding: 20px; border-radius: 15px;">
-                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px; color: #94a3b8;">
-                                <span>Pares Totais</span><span>${totals.p}</span>
+                        <div style="width: 280px; background: #1e293b; color: white; padding: 24px; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 12px;">
+                                <span style="color: #94a3b8;">Total de Pares</span><span style="font-weight: 800;">${totals.p}</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px;">
-                                <span>Produtos</span><span>R$ ${totals.v.toFixed(2)}</span>
+                                <span style="color: #94a3b8;">Soma dos Produtos</span><span>R$ ${totals.v.toFixed(2)}</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px;">
-                                <span>Frete (+)</span><span>R$ ${parseFloat(data.config.frete).toFixed(2)}</span>
+                                <span style="color: #94a3b8;">Frete (+)</span><span>R$ ${parseFloat(data.config.frete).toFixed(2)}</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px; color: #fb7185;">
-                                <span>Desconto (-)</span><span>R$ ${parseFloat(data.config.desconto).toFixed(2)}</span>
+                                <span style="color: #fb7185;">Desconto (-)</span><span>- R$ ${parseFloat(data.config.desconto).toFixed(2)}</span>
                             </div>
-                            <div style="border-top: 1px solid #334155; padding-top: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-weight: 800; font-size: 12px; color: #818cf8;">TOTAL FINAL</span>
-                                <span style="font-weight: 900; font-size: 20px;">R$ ${totalFinal.toFixed(2)}</span>
+                            <div style="border-top: 1px solid #334155; padding-top: 16px; margin-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 800; font-size: 12px; color: #818cf8; text-transform: uppercase;">Total do Pedido</span>
+                                <span style="font-weight: 900; font-size: 22px;">R$ ${totalFinal.toFixed(2)}</span>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #94a3b8; font-size: 10px;">
-                        Documento gerado eletronicamente por OrderSystem PRO.
                     </div>
                 </div>
             `;
 
             try {
-                const canvas = await html2canvas(area, { scale: 2, useCORS: true });
+                const canvas = await html2canvas(area, { scale: 2, useCORS: true, logging: false });
                 const img = canvas.toDataURL('image/jpeg', 0.95);
                 const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
                 const w = pdf.internal.pageSize.getWidth();
                 const h = (canvas.height * w) / canvas.width;
                 pdf.addImage(img, 'JPEG', 0, 0, w, h);
-                pdf.save(`Pedido_${data.cliente.nome.replace(/\s+/g,'_')}.pdf`);
-            } catch (e) { console.error(e); alert("Erro ao gerar PDF"); }
+                pdf.save(`Pedido_${(data.cliente.nome || 'SemNome').replace(/\s+/g,'_')}.pdf`);
+                window.showToast("PDF gerado com sucesso!");
+            } catch (e) { alert("Erro ao gerar PDF"); }
             finally { loader.style.display = 'none'; area.innerHTML = ''; }
         };
 
-        window.verHist = id => { const p = window.appState.historico.find(x => x.id === id); window.appState.cliente = p.cliente; window.appState.modelos = p.modelos; window.appState.config = p.config; window.appState.prazoEntrega = p.prazoEntrega; window.updateUIFromState(); window.gerarPDFDocumento('cliente'); };
+        window.verHist = id => { const p = window.appState.historico.find(x => x.id === id); if(p){ window.appState.cliente = p.cliente; window.appState.modelos = p.modelos; window.appState.config = p.config; window.appState.prazoEntrega = p.prazoEntrega; window.updateUIFromState(); window.gerarPDFDocumento('cliente'); }};
+    </script>
 
-        window.updateUIFromState();
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'order-system-pro';
+
+        if (configStr) {
+            try {
+                const config = JSON.parse(configStr);
+                const app = initializeApp(config);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+
+                onAuthStateChanged(auth, async (u) => {
+                    if (u) {
+                        const ind = document.getElementById('sync-indicator');
+                        const txt = document.getElementById('sync-text');
+                        if (ind) ind.className = "w-1.5 h-1.5 rounded-full bg-green-500";
+                        if (txt) txt.innerText = "Sincronizado";
+
+                        onSnapshot(doc(db, 'artifacts', appId, 'users', u.uid, 'currentOrder', 'main'), (ds) => {
+                            if (ds.exists()) {
+                                const d = ds.data();
+                                window.appState.cliente = d.cliente || window.appState.cliente;
+                                window.appState.modelos = d.modelos || [];
+                                window.appState.config = d.config || window.appState.config;
+                                window.updateUIFromState();
+                            }
+                        });
+
+                        onSnapshot(collection(db, 'artifacts', appId, 'users', u.uid, 'pedidos'), (qs) => {
+                            const ped = []; qs.forEach(d => ped.push({ id: d.id, ...d.data() }));
+                            window.appState.historico = ped.sort((a, b) => new Date(b.dataFinalizado) - new Date(a.dataFinalizado));
+                            window.renderHistorico();
+                        });
+                    } else {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+                        else await signInAnonymously(auth);
+                    }
+                });
+
+                window.saveToCloud = async () => {
+                    if (!auth.currentUser) return;
+                    try {
+                        await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'currentOrder', 'main'), {
+                            cliente: window.appState.cliente, modelos: window.appState.modelos, config: window.appState.config, lastUpdated: new Date().toISOString()
+                        });
+                    } catch (e) {}
+                };
+
+                window.finalizarPedido = async () => {
+                    if (window.appState.modelos.length === 0) return alert("Adicione itens!");
+                    if (!confirm("Finalizar e arquivar?")) return;
+                    try {
+                        const data = { ...window.appState, dataFinalizado: new Date().toISOString() };
+                        delete data.historico;
+                        await addDoc(collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'pedidos'), data);
+                        await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'currentOrder', 'main'), {
+                            cliente: { ...window.appState.cliente, nome: '', telefone: '', cnpj: '', cep: '', endereco: '', cidade: '', estado: '' },
+                            modelos: [], config: { desconto: 0, frete: 0, gradePadrao: { '34': 0, '35': 0, '36': 0, '37': 0, '38': 0, '39': 0, '40': 0 } }
+                        });
+                        window.showToast("Pedido Arquivado!");
+                    } catch (e) { alert("Erro ao salvar"); }
+                };
+
+                window.eliminarDoHistorico = async (id) => {
+                    if (confirm("Apagar?")) await deleteDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'pedidos', id));
+                };
+            } catch(e) { console.warn("Firebase falhou, modo local ativo."); }
+        }
     </script>
 </body>
 </html>
