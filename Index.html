@@ -33,7 +33,11 @@
             <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
                 <div class="flex items-center gap-3">
                     <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100">
-                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4 7.55 4.24M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7l8.71 5 8.71-5"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16.5 9.4 7.55 4.24M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                            <path d="M3.29 7l8.71 5 8.71-5"/>
+                            <line x1="12" y1="22" x2="12" y2="12"/>
+                        </svg>
                     </div>
                     <div>
                         <h1 class="text-lg font-black tracking-tighter">OrderSystem <span class="text-indigo-600">PRO</span></h1>
@@ -167,7 +171,11 @@
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> PDF Cliente
                 </button>
                 <button onclick="window.print()" class="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-2xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 9.4 7.55 4.24M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7l8.71 5 8.71-5"/><line x1="12" y1="22" x2="12" y2="12"/></svg> PDF Produção
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16.5 9.4 7.55 4.24M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                        <path d="M3.29 7l8.71 5 8.71-5"/>
+                        <line x1="12" y1="22" x2="12" y2="12"/>
+                    </svg> PDF Produção
                 </button>
             </div>
         </div>
@@ -175,6 +183,16 @@
 
     <!-- Toast Container -->
     <div id="toast-container" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[110]"></div>
+
+    <!-- Inicialização Global do Estado -->
+    <script>
+        // Inicializamos o estado imediatamente para evitar erros de undefined
+        window.appState = {
+            cliente: { nome: '', telefone: '', cnpj: '', cep: '', endereco: '', bairro: '', cidade: '', estado: '', logo: '' },
+            modelos: [],
+            config: { desconto: 0, frete: 0, gradePadrao: { '34': 0, '35': 0, '36': 0, '37': 0, '38': 0, '39': 0, '40': 0 } }
+        };
+    </script>
 
     <!-- Scripts do Firebase -->
     <script type="module">
@@ -185,25 +203,27 @@
         // Variáveis Globais para os outros scripts
         window.FirebaseOps = { setDoc, doc, onSnapshot };
 
-        // --- Inicialização ---
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // --- Inicialização com Verificação ---
+        let firebaseApp;
+        let db;
+        let auth;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'order-system-pro';
+
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+            try {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                firebaseApp = initializeApp(firebaseConfig);
+                auth = getAuth(firebaseApp);
+                db = getFirestore(firebaseApp);
+            } catch(e) { console.error("Erro ao configurar Firebase:", e); }
+        }
 
         let user = null;
         let isFirstLoad = true;
 
-        // --- Estado da Aplicação ---
-        window.appState = {
-            cliente: { nome: '', telefone: '', cnpj: '', cep: '', endereco: '', bairro: '', cidade: '', estado: '', logo: '' },
-            modelos: [],
-            config: { desconto: 0, frete: 0, gradePadrao: { '34': 0, '35': 0, '36': 0, '37': 0, '38': 0, '39': 0, '40': 0 } }
-        };
-
         // --- Autenticação ---
-        const init = async () => {
+        const initAuth = async () => {
+            if (!auth) return;
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await signInWithCustomToken(auth, __initial_auth_token);
             } else {
@@ -211,38 +231,39 @@
             }
         };
 
-        onAuthStateChanged(auth, (u) => {
-            user = u;
-            if (user) {
-                // Sincronização em tempo real
-                onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'currentOrder', 'main'), (docSnap) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        window.appState.cliente = data.cliente || window.appState.cliente;
-                        window.appState.modelos = data.modelos || [];
-                        window.appState.config = data.config || window.appState.config;
-                        
-                        // Atualiza a interface apenas na primeira carga ou via disparos específicos
-                        if (isFirstLoad) {
-                            updateUIFromState();
-                            isFirstLoad = false;
-                        } else {
-                            // Se a mudança veio de outro dispositivo, atualizamos a lista de modelos
-                            renderModelos();
-                            calculateTotals();
+        if (auth) {
+            onAuthStateChanged(auth, (u) => {
+                user = u;
+                if (user && db) {
+                    // Sincronização em tempo real
+                    onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'currentOrder', 'main'), (docSnap) => {
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            window.appState.cliente = data.cliente || window.appState.cliente;
+                            window.appState.modelos = data.modelos || [];
+                            window.appState.config = data.config || window.appState.config;
+                            
+                            if (isFirstLoad) {
+                                if (window.updateUIFromState) window.updateUIFromState();
+                                isFirstLoad = false;
+                            } else {
+                                if (window.renderModelos) window.renderModelos();
+                                if (window.calculateTotals) window.calculateTotals();
+                            }
                         }
-                    }
-                });
-            }
-        });
-
-        init();
+                    }, (err) => console.error("Erro no Firestore:", err));
+                }
+            });
+            initAuth();
+        }
 
         // Função Global para salvar no Firebase
         window.saveToCloud = async () => {
-            if (!user) return;
-            document.getElementById('sync-indicator').classList.replace('bg-green-500', 'bg-amber-400');
-            document.getElementById('sync-text').innerText = 'A Guardar...';
+            if (!user || !db) return;
+            const indicator = document.getElementById('sync-indicator');
+            const text = document.getElementById('sync-text');
+            if (indicator) indicator.classList.replace('bg-green-500', 'bg-amber-400');
+            if (text) text.innerText = 'A Guardar...';
             
             try {
                 await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'currentOrder', 'main'), {
@@ -253,12 +274,12 @@
                 });
                 
                 setTimeout(() => {
-                    document.getElementById('sync-indicator').classList.replace('bg-amber-400', 'bg-green-500');
-                    document.getElementById('sync-text').innerText = 'Nuvem Ativa';
+                    if (indicator) indicator.classList.replace('bg-amber-400', 'bg-green-500');
+                    if (text) text.innerText = 'Nuvem Ativa';
                 }, 500);
             } catch (e) {
                 console.error(e);
-                showToast("Erro ao sincronizar", "error");
+                if (window.showToast) window.showToast("Erro ao sincronizar", "error");
             }
         };
     </script>
@@ -280,40 +301,43 @@
         const elInputDesconto = document.getElementById('input-desconto');
 
         // --- Funções de Ajuda ---
-        function showToast(msg, type = "success") {
+        window.showToast = function(msg, type = "success") {
             const container = document.getElementById('toast-container');
+            if (!container) return;
             const toast = document.createElement('div');
             toast.className = `px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 toast-animate mb-4 ${type === 'success' ? 'bg-indigo-600' : 'bg-rose-600'} text-white`;
             toast.innerHTML = `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg><span class="font-bold text-sm tracking-tight">${msg}</span>`;
             container.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
-        }
+        };
 
-        function updateUIFromState() {
+        window.updateUIFromState = function() {
             const { cliente, config } = window.appState;
-            elClienteNome.value = cliente.nome || '';
-            elClienteTelefone.value = cliente.telefone || '';
-            elClienteCnpj.value = cliente.cnpj || '';
-            elClienteCep.value = cliente.cep || '';
-            elClienteEnd.value = cliente.endereco || '';
-            elClienteCid.value = cliente.cidade || '';
-            elClienteEst.value = cliente.estado || '';
+            if (!cliente || !config) return;
             
-            if (cliente.logo) {
+            if (elClienteNome) elClienteNome.value = cliente.nome || '';
+            if (elClienteTelefone) elClienteTelefone.value = cliente.telefone || '';
+            if (elClienteCnpj) elClienteCnpj.value = cliente.cnpj || '';
+            if (elClienteCep) elClienteCep.value = cliente.cep || '';
+            if (elClienteEnd) elClienteEnd.value = cliente.endereco || '';
+            if (elClienteCid) elClienteCid.value = cliente.cidade || '';
+            if (elClienteEst) elClienteEst.value = cliente.estado || '';
+            
+            if (cliente.logo && elLogoImg) {
                 elLogoImg.src = cliente.logo;
                 elLogoImg.classList.remove('hidden');
-                elLogoPlaceholder.classList.add('hidden');
+                if (elLogoPlaceholder) elLogoPlaceholder.classList.add('hidden');
             }
 
-            elInputFrete.value = config.frete || 0;
-            elInputDesconto.value = config.desconto || 0;
+            if (elInputFrete) elInputFrete.value = config.frete || 0;
+            if (elInputDesconto) elInputDesconto.value = config.desconto || 0;
 
-            renderModelos();
-            calculateTotals();
-        }
+            window.renderModelos();
+            window.calculateTotals();
+        };
 
-        function calculateTotals() {
-            const { modelos, config } = window.appState;
+        window.calculateTotals = function() {
+            const { modelos } = window.appState;
             let totalParesGlobal = 0;
             let subtotalProdutos = 0;
 
@@ -326,18 +350,24 @@
                 subtotalProdutos += totalModelo * (parseFloat(m.valorUnitario) || 0);
             });
 
-            const frete = parseFloat(elInputFrete.value) || 0;
-            const desconto = parseFloat(elInputDesconto.value) || 0;
+            const frete = parseFloat(elInputFrete ? elInputFrete.value : 0) || 0;
+            const desconto = parseFloat(elInputDesconto ? elInputDesconto.value : 0) || 0;
             const final = subtotalProdutos + frete - desconto;
 
-            document.getElementById('total-pares-header').innerText = totalParesGlobal;
-            document.getElementById('subtotal-header').innerText = `R$ ${final.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-            document.getElementById('valor-mercadoria').innerText = `R$ ${subtotalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-            document.getElementById('valor-final').innerText = `R$ ${final.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-        }
+            const elTotalPares = document.getElementById('total-pares-header');
+            const elSubtotal = document.getElementById('subtotal-header');
+            const elValMerc = document.getElementById('valor-mercadoria');
+            const elValFin = document.getElementById('valor-final');
 
-        function renderModelos() {
+            if (elTotalPares) elTotalPares.innerText = totalParesGlobal;
+            if (elSubtotal) elSubtotal.innerText = `R$ ${final.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            if (elValMerc) elValMerc.innerText = `R$ ${subtotalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            if (elValFin) elValFin.innerText = `R$ ${final.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        };
+
+        window.renderModelos = function() {
             const { modelos } = window.appState;
+            if (!elModelosLista) return;
             elModelosLista.innerHTML = '';
 
             if (modelos.length === 0) {
@@ -363,19 +393,19 @@
                         <div class="w-full md:w-48 h-48 relative bg-slate-100">
                             <img src="${m.foto}" class="w-full h-full object-cover" />
                             <div class="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded-lg uppercase">Item #${idx+1}</div>
-                            <input type="file" class="absolute inset-0 opacity-0 cursor-pointer" onchange="updateModeloFoto('${m.id}', this)" />
+                            <input type="file" class="absolute inset-0 opacity-0 cursor-pointer" onchange="window.updateModeloFoto('${m.id}', this)" />
                         </div>
                         <div class="flex-1 p-6 space-y-4">
                             <div class="flex justify-between items-start gap-4">
                                 <div class="flex-1">
                                     <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Cores</label>
-                                    <input type="text" value="${m.cores}" oninput="updateModeloData('${m.id}', 'cores', this.value)" class="w-full border-b border-slate-100 py-1 outline-none focus:border-indigo-500 font-bold text-sm" placeholder="Ex: Preto, Nude" />
+                                    <input type="text" value="${m.cores}" oninput="window.updateModeloData('${m.id}', 'cores', this.value)" class="w-full border-b border-slate-100 py-1 outline-none focus:border-indigo-500 font-bold text-sm" placeholder="Ex: Preto, Nude" />
                                 </div>
                                 <div class="text-right">
                                     <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Valor Unit.</label>
                                     <div class="flex items-center gap-1 font-black text-lg">
                                         <span class="text-slate-300 text-sm">R$</span>
-                                        <input type="number" value="${m.valorUnitario}" oninput="updateModeloData('${m.id}', 'valorUnitario', this.value)" class="w-20 text-right outline-none bg-transparent" />
+                                        <input type="number" value="${m.valorUnitario}" oninput="window.updateModeloData('${m.id}', 'valorUnitario', this.value)" class="w-20 text-right outline-none bg-transparent" />
                                     </div>
                                 </div>
                             </div>
@@ -383,7 +413,7 @@
                                 ${Object.keys(m.grade).map(size => `
                                     <div class="flex flex-col items-center">
                                         <span class="text-[10px] font-bold text-slate-400 mb-1">${size}</span>
-                                        <input type="number" value="${m.grade[size]}" oninput="updateModeloGrade('${m.id}', '${size}', this.value)" class="w-full text-center py-2 bg-slate-50 rounded-xl border-none outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-sm" />
+                                        <input type="number" value="${m.grade[size]}" oninput="window.updateModeloGrade('${m.id}', '${size}', this.value)" class="w-full text-center py-2 bg-slate-50 rounded-xl border-none outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-sm" />
                                     </div>
                                 `).join('')}
                             </div>
@@ -393,10 +423,10 @@
                                     <div class="bg-emerald-50 px-3 py-1 rounded-full text-[10px] font-bold text-emerald-600 uppercase tracking-widest">R$ ${subModelo.toLocaleString('pt-BR')}</div>
                                 </div>
                                 <div class="flex gap-2">
-                                    <button onclick="cloneModelo('${m.id}')" class="p-2 hover:bg-slate-50 text-slate-300 hover:text-indigo-600 transition-all">
+                                    <button onclick="window.cloneModelo('${m.id}')" class="p-2 hover:bg-slate-50 text-slate-300 hover:text-indigo-600 transition-all">
                                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                     </button>
-                                    <button onclick="deleteModelo('${m.id}')" class="p-2 hover:bg-rose-50 text-slate-300 hover:text-rose-600 transition-all">
+                                    <button onclick="window.deleteModelo('${m.id}')" class="p-2 hover:bg-rose-50 text-slate-300 hover:text-rose-600 transition-all">
                                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg>
                                     </button>
                                 </div>
@@ -406,38 +436,40 @@
                 `;
                 elModelosLista.appendChild(card);
             });
-        }
+        };
 
-        // --- Eventos de Input (Debounce no save) ---
+        // --- Sincronização e Eventos ---
         let saveTimeout;
         const triggerSave = () => {
             clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(() => window.saveToCloud(), 1000);
+            saveTimeout = setTimeout(() => { if (window.saveToCloud) window.saveToCloud(); }, 1000);
         };
 
         const updateCliente = (field, val) => {
-            window.appState.cliente[field] = val;
-            calculateTotals();
-            triggerSave();
+            if (window.appState && window.appState.cliente) {
+                window.appState.cliente[field] = val;
+                window.calculateTotals();
+                triggerSave();
+            }
         };
 
-        elClienteNome.oninput = (e) => updateCliente('nome', e.target.value);
-        elClienteTelefone.oninput = (e) => updateCliente('telefone', e.target.value);
-        elClienteCnpj.oninput = (e) => updateCliente('cnpj', e.target.value);
-        elClienteCep.oninput = (e) => updateCliente('cep', e.target.value);
-        elClienteEnd.oninput = (e) => updateCliente('endereco', e.target.value);
-        elClienteCid.oninput = (e) => updateCliente('cidade', e.target.value);
-        elClienteEst.oninput = (e) => updateCliente('estado', e.target.value);
+        if (elClienteNome) elClienteNome.oninput = (e) => updateCliente('nome', e.target.value);
+        if (elClienteTelefone) elClienteTelefone.oninput = (e) => updateCliente('telefone', e.target.value);
+        if (elClienteCnpj) elClienteCnpj.oninput = (e) => updateCliente('cnpj', e.target.value);
+        if (elClienteCep) elClienteCep.oninput = (e) => updateCliente('cep', e.target.value);
+        if (elClienteEnd) elClienteEnd.oninput = (e) => updateCliente('endereco', e.target.value);
+        if (elClienteCid) elClienteCid.oninput = (e) => updateCliente('cidade', e.target.value);
+        if (elClienteEst) elClienteEst.oninput = (e) => updateCliente('estado', e.target.value);
         
-        elInputFrete.oninput = (e) => { window.appState.config.frete = e.target.value; calculateTotals(); triggerSave(); };
-        elInputDesconto.oninput = (e) => { window.appState.config.desconto = e.target.value; calculateTotals(); triggerSave(); };
+        if (elInputFrete) elInputFrete.oninput = (e) => { window.appState.config.frete = e.target.value; window.calculateTotals(); triggerSave(); };
+        if (elInputDesconto) elInputDesconto.oninput = (e) => { window.appState.config.desconto = e.target.value; window.calculateTotals(); triggerSave(); };
 
         // --- Funções dos Modelos ---
         window.updateModeloData = (id, field, val) => {
             const index = window.appState.modelos.findIndex(m => m.id === id);
             if (index > -1) {
                 window.appState.modelos[index][field] = val;
-                calculateTotals();
+                window.calculateTotals();
                 triggerSave();
             }
         };
@@ -446,13 +478,16 @@
             const index = window.appState.modelos.findIndex(m => m.id === id);
             if (index > -1) {
                 window.appState.modelos[index].grade[size] = parseInt(val) || 0;
-                calculateTotals();
-                // Aqui não renderizamos tudo para não perder o foco do input, mas atualizamos os cálculos
-                const cardTotals = elModelosLista.children[index].querySelector('.bg-indigo-50').parentNode;
-                const pCor = Object.values(window.appState.modelos[index].grade).reduce((a, b) => a + (parseInt(b) || 0), 0);
-                const nC = window.appState.modelos[index].cores.split(',').filter(c => c.trim()).length || 1;
-                cardTotals.children[0].innerText = `${pCor * nC} pares`;
-                cardTotals.children[1].innerText = `R$ ${(pCor * nC * window.appState.modelos[index].valorUnitario).toLocaleString('pt-BR')}`;
+                window.calculateTotals();
+                
+                // Atualização pontual do subtotal no card para evitar render completo
+                if (elModelosLista && elModelosLista.children[index]) {
+                    const cardTotals = elModelosLista.children[index].querySelector('.bg-indigo-50').parentNode;
+                    const pCor = Object.values(window.appState.modelos[index].grade).reduce((a, b) => a + (parseInt(b) || 0), 0);
+                    const nC = window.appState.modelos[index].cores.split(',').filter(c => c.trim()).length || 1;
+                    if (cardTotals && cardTotals.children[0]) cardTotals.children[0].innerText = `${pCor * nC} pares`;
+                    if (cardTotals && cardTotals.children[1]) cardTotals.children[1].innerText = `R$ ${(pCor * nC * window.appState.modelos[index].valorUnitario).toLocaleString('pt-BR')}`;
+                }
                 triggerSave();
             }
         };
@@ -463,7 +498,7 @@
                 const index = window.appState.modelos.findIndex(m => m.id === id);
                 if (index > -1) {
                     window.appState.modelos[index].foto = e.target.result;
-                    renderModelos();
+                    window.renderModelos();
                     triggerSave();
                 }
             };
@@ -472,8 +507,8 @@
 
         window.deleteModelo = (id) => {
             window.appState.modelos = window.appState.modelos.filter(m => m.id !== id);
-            renderModelos();
-            calculateTotals();
+            window.renderModelos();
+            window.calculateTotals();
             triggerSave();
         };
 
@@ -483,79 +518,97 @@
                 const clone = JSON.parse(JSON.stringify(target));
                 clone.id = Math.random().toString(36).substr(2, 9);
                 window.appState.modelos.push(clone);
-                renderModelos();
-                calculateTotals();
+                window.renderModelos();
+                window.calculateTotals();
                 triggerSave();
             }
         };
 
-        document.getElementById('btn-add-modelo').onclick = () => {
-            const newModel = { 
-                id: Math.random().toString(36).substr(2, 9), 
-                foto: 'https://placehold.co/300x300/e2e8f0/6366f1?text=Novo+Modelo', 
-                cores: '', 
-                valorUnitario: 0, 
-                grade: { ...window.appState.config.gradePadrao } 
+        const btnAdd = document.getElementById('btn-add-modelo');
+        if (btnAdd) {
+            btnAdd.onclick = () => {
+                if (!window.appState || !window.appState.config) return;
+                const newModel = { 
+                    id: Math.random().toString(36).substr(2, 9), 
+                    foto: 'https://placehold.co/300x300/e2e8f0/6366f1?text=Novo+Modelo', 
+                    cores: '', 
+                    valorUnitario: 0, 
+                    grade: { ...window.appState.config.gradePadrao } 
+                };
+                window.appState.modelos.push(newModel);
+                window.renderModelos();
+                window.calculateTotals();
+                triggerSave();
+                window.showToast("Modelo adicionado!");
             };
-            window.appState.modelos.push(newModel);
-            renderModelos();
-            calculateTotals();
-            triggerSave();
-            showToast("Modelo adicionado!");
-        };
+        }
 
         // --- CEP e Logo ---
-        document.getElementById('btn-buscar-cep').onclick = async () => {
-            const cep = elClienteCep.value.replace(/\D/g, '');
-            if (cep.length !== 8) return;
-            try {
-                const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                const data = await res.json();
-                if (!data.erro) {
-                    elClienteEnd.value = data.logradouro;
-                    elClienteCid.value = data.localidade;
-                    elClienteEst.value = data.uf;
-                    updateCliente('endereco', data.logradouro);
-                    updateCliente('cidade', data.localidade);
-                    updateCliente('estado', data.uf);
-                }
-            } catch (e) { showToast("Erro no CEP", "error"); }
-        };
-
-        document.getElementById('input-logo').onchange = (e) => {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                elLogoImg.src = ev.target.result;
-                elLogoImg.classList.remove('hidden');
-                elLogoPlaceholder.classList.add('hidden');
-                updateCliente('logo', ev.target.result);
-            };
-            if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
-        };
-
-        document.getElementById('input-lote').onchange = (e) => {
-            const files = Array.from(e.target.files);
-            files.forEach(f => {
-                const r = new FileReader();
-                r.onload = ev => {
-                    const newModel = { 
-                        id: Math.random().toString(36).substr(2, 9), 
-                        foto: ev.target.result, 
-                        cores: '', 
-                        valorUnitario: 0, 
-                        grade: { ...window.appState.config.gradePadrao } 
-                    };
-                    window.appState.modelos.push(newModel);
-                    if (files.indexOf(f) === files.length - 1) {
-                        renderModelos();
-                        calculateTotals();
-                        triggerSave();
-                        showToast("Lote importado!");
+        const btnCep = document.getElementById('btn-buscar-cep');
+        if (btnCep) {
+            btnCep.onclick = async () => {
+                const cep = elClienteCep.value.replace(/\D/g, '');
+                if (cep.length !== 8) return;
+                try {
+                    const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                    const data = await res.json();
+                    if (!data.erro) {
+                        elClienteEnd.value = data.logradouro;
+                        elClienteCid.value = data.localidade;
+                        elClienteEst.value = data.uf;
+                        updateCliente('endereco', data.logradouro);
+                        updateCliente('cidade', data.localidade);
+                        updateCliente('estado', data.uf);
                     }
+                } catch (e) { window.showToast("Erro no CEP", "error"); }
+            };
+        }
+
+        const inputLogo = document.getElementById('input-logo');
+        if (inputLogo) {
+            inputLogo.onchange = (e) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    if (elLogoImg) {
+                        elLogoImg.src = ev.target.result;
+                        elLogoImg.classList.remove('hidden');
+                    }
+                    if (elLogoPlaceholder) elLogoPlaceholder.classList.add('hidden');
+                    updateCliente('logo', ev.target.result);
                 };
-                r.readAsDataURL(f);
-            });
-        };
+                if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+            };
+        }
+
+        const inputLote = document.getElementById('input-lote');
+        if (inputLote) {
+            inputLote.onchange = (e) => {
+                const files = Array.from(e.target.files);
+                files.forEach((f, fIdx) => {
+                    const r = new FileReader();
+                    r.onload = ev => {
+                        const newModel = { 
+                            id: Math.random().toString(36).substr(2, 9), 
+                            foto: ev.target.result, 
+                            cores: '', 
+                            valorUnitario: 0, 
+                            grade: { ...window.appState.config.gradePadrao } 
+                        };
+                        window.appState.modelos.push(newModel);
+                        if (fIdx === files.length - 1) {
+                            window.renderModelos();
+                            window.calculateTotals();
+                            triggerSave();
+                            window.showToast("Lote importado!");
+                        }
+                    };
+                    r.readAsDataURL(f);
+                });
+            };
+        }
+
+        // Inicialização Final
+        window.updateUIFromState();
     </script>
 </body>
 </html>
